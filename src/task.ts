@@ -1,5 +1,5 @@
 interface task {
-    supervisor: string,
+    supervisor: supervisor,
     runnerRequest: boolean,
     recieveLocation: string,
     depositLocation:string,

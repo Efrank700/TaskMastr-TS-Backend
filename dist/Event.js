@@ -97,6 +97,10 @@ class EVENT {
             }
         }
     }
+    /**
+     * @param screenName
+     * @returns admin target Admin
+     */
     getAdminByScreenName(screenName) {
         if (this.admins === null)
             return (null);
@@ -106,6 +110,181 @@ class EVENT {
                 return (null);
             else
                 return (this.admins[found]);
+        }
+    }
+    /**
+     * @param screenName
+     * @returns supervisor target supervisor
+     */
+    getSupervisorByScreenName(screenName) {
+        if (this.supervisors === null)
+            return (null);
+        else {
+            let found = (this.supervisors.findIndex((targetSup) => { return (targetSup.screenName === screenName); }));
+            if (found === -1)
+                return (null);
+            else
+                return (this.supervisors[found]);
+        }
+    }
+    /**
+     *@param screenName
+     *@return runner target runner
+     */
+    getRunnerByScreenName(screenName) {
+        if (this.freeRunners === null) {
+            if (this.taskedRunners === null)
+                return (null);
+            else {
+                let runnerPos = this.taskedRunners.findIndex((targetRunner) => { return targetRunner.screenName === screenName; });
+                if (runnerPos === -1)
+                    return (null);
+                else
+                    return (this.taskedRunners[runnerPos]);
+            }
+        }
+        else {
+            let runnerPos = this.freeRunners.findIndex((targetRunner) => { return targetRunner.screenName === screenName; });
+            if (runnerPos === -1) {
+                if (this.taskedRunners === null)
+                    return (null);
+                else {
+                    runnerPos = this.taskedRunners.findIndex((targetRunner) => { return targetRunner.screenName === screenName; });
+                    if (runnerPos === -1)
+                        return (null);
+                    else
+                        return (this.taskedRunners[runnerPos]);
+                }
+            }
+            else
+                return (this.freeRunners[runnerPos]);
+        }
+    }
+    /**
+     * @param task
+     * @param runner
+     * @return runner | null
+     */
+    assignTask(task, runner) {
+        if (this.freeRunners === null)
+            return (null);
+        else {
+            let runnerPos = this.freeRunners.findIndex((targetRunner) => { return targetRunner.screenName === runner.screenName; });
+            if (runnerPos === -1)
+                return (null);
+            else {
+                let targetRunner = this.freeRunners[runnerPos];
+                targetRunner.task = task;
+                this.freeRunners.splice(runnerPos, 1);
+                if (this.taskedRunners === null)
+                    this.taskedRunners = [targetRunner];
+                else
+                    this.taskedRunners.push(targetRunner);
+                return (targetRunner);
+            }
+        }
+    }
+    unassignTask(runner) {
+        if (runner.task === null)
+            return ([null, null]);
+        let runnerTask = runner.task;
+        runner.task = null;
+        if (this.taskedRunners === null)
+            return ([runnerTask, null]);
+        else {
+            let runnerIndex = this.taskedRunners.findIndex((targetRunner) => { return targetRunner === runner; });
+            if (runnerIndex === -1) {
+                if (runner.roomName === this.eventName) {
+                    if (this.freeRunners === null) {
+                        this.freeRunners = [runner];
+                        return ([runnerTask, runner]);
+                    }
+                    else {
+                        let secondIndex = this.freeRunners.findIndex((targetRunner) => { return targetRunner === runner; });
+                        if (secondIndex === -1) {
+                            this.freeRunners.push(runner);
+                            return ([runnerTask, runner]);
+                        }
+                        else
+                            return ([runnerTask, runner]);
+                    }
+                }
+                else
+                    return ([null, runner]);
+            }
+            else {
+                this.taskedRunners.splice(runnerIndex, 1);
+                if (runner.roomName === this.eventName) {
+                    if (this.freeRunners === null) {
+                        this.freeRunners = [runner];
+                        return ([runnerTask, runner]);
+                    }
+                    else {
+                        let secondIndex = this.freeRunners.findIndex((targetRunner) => { return targetRunner === runner; });
+                        if (secondIndex === -1) {
+                            this.freeRunners.push(runner);
+                            return ([runnerTask, runner]);
+                        }
+                        else
+                            return ([runnerTask, runner]);
+                    }
+                }
+                else
+                    return ([null, runner]);
+            }
+        }
+    }
+    addTask(task) {
+        task.supervisor.tasks.push(task);
+        if (this.freeRunners === null) {
+            if (this.waitingTasks === null) {
+                this.waitingTasks = [{ id: this.taskCount, task: task }];
+                this.taskCount++;
+                return ([false, task, null]);
+            }
+            else {
+                this.waitingTasks.push({ id: this.taskCount, task: task });
+                this.taskCount++;
+                return ([false, task, null]);
+            }
+        }
+        else {
+            if (this.freeRunners.length > 0) {
+                let res;
+                let i = 0;
+                do {
+                    res = this.assignTask(task, this.freeRunners[i]);
+                    i++;
+                } while (i < this.freeRunners.length && res == null);
+                if (res == null) {
+                    if (this.waitingTasks === null) {
+                        this.waitingTasks = [{ id: this.taskCount, task: task }];
+                        this.taskCount++;
+                        return ([false, task, null]);
+                    }
+                    else {
+                        this.waitingTasks.push({ id: this.taskCount, task: task });
+                        this.taskCount++;
+                        return ([false, task, null]);
+                    }
+                }
+                else {
+                    let runner = this.assignTask(task, res);
+                    return ([true, task, runner]);
+                }
+            }
+            else {
+                if (this.waitingTasks === null) {
+                    this.waitingTasks = [{ id: this.taskCount, task: task }];
+                    this.taskCount++;
+                    return ([false, task, null]);
+                }
+                else {
+                    this.waitingTasks.push({ id: this.taskCount, task: task });
+                    this.taskCount++;
+                    return ([false, task, null]);
+                }
+            }
         }
     }
     /**
@@ -130,5 +309,104 @@ class EVENT {
                 }
             }
         }
+    }
+    removeSupervisor(supervisor) {
+        if (this.supervisors === null)
+            return ([false, null]);
+        if (this.supervisors.length === 0)
+            return ([false, null]);
+        else {
+            let supervisorIndex = this.supervisors.findIndex((targetSupervisor) => {
+                return targetSupervisor === supervisor;
+            });
+            if (supervisorIndex === -1)
+                return ([true, null]);
+            else {
+                let retSupervisor = this.supervisors[supervisorIndex];
+                this.supervisors.splice(supervisorIndex, 1);
+                return ([true, retSupervisor]);
+            }
+        }
+    }
+    removeRunner(runner) {
+        if (this.freeRunners === null && this.taskedRunners === null)
+            return ([false, null]);
+        else {
+            if (this.freeRunners === null) {
+                if (this.taskedRunners !== null) {
+                    let taskedIndex = this.taskedRunners.findIndex((targetRunner) => { return targetRunner === runner; });
+                    if (taskedIndex === -1)
+                        return ([false, null]);
+                    else {
+                        let [task, targetRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
+                        if (task === null) {
+                            return ([false, null]);
+                        }
+                        else {
+                            if (targetRunner === null) {
+                                return ([true, null]);
+                            }
+                            else {
+                                return (this.removeRunner(targetRunner));
+                            }
+                        }
+                    }
+                }
+                else {
+                    return ([false, null]);
+                }
+            }
+            else {
+                let firstIndex = this.freeRunners.findIndex((targetRunner) => { return targetRunner === runner; });
+                if (firstIndex === -1) {
+                    if (this.taskedRunners === null)
+                        return ([false, null]);
+                    else {
+                        let secondIndex = this.taskedRunners.findIndex((targetRunner) => { return targetRunner === runner; });
+                        if (secondIndex === -1)
+                            return ([true, null]);
+                        else {
+                            let newRunner = this.taskedRunners[secondIndex];
+                            this.taskedRunners.splice(secondIndex, 1);
+                            return ([true, newRunner]);
+                        }
+                    }
+                }
+                else {
+                    let newRunner = this.freeRunners[firstIndex];
+                    this.freeRunners.splice(firstIndex, 1);
+                    return ([true, newRunner]);
+                }
+            }
+        }
+    }
+    taskIsAssigned(task) {
+        if (this.taskedRunners === null)
+            return (false);
+        else {
+            let taskIndex = this.taskedRunners.findIndex((targetRunner) => { return targetRunner.task === task; });
+            return (taskIndex !== -1);
+        }
+    }
+    removeAssignedTask(task) {
+        if (this.taskedRunners === null)
+            return ([false, null, null]);
+        else {
+            let taskedIndex = this.taskedRunners.findIndex((targetRunner) => { return targetRunner.task === task; });
+            if (taskedIndex === -1)
+                return ([true, null, null]);
+            else {
+                let targetTask = this.taskedRunners[taskedIndex].task;
+                if (targetTask === null)
+                    return ([false, null, null]);
+                else {
+                    let [retTask, retRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
+                    let [success, freedTask] = this.removeFreeTask(targetTask);
+                    return ([success, freedTask, retRunner]);
+                }
+            }
+        }
+    }
+    removeFreeTask(task) {
     }
 }

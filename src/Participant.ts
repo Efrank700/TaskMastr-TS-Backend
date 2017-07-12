@@ -17,6 +17,7 @@ interface supervisor extends participant{
     screenName: string;
     roomName: string;
     location: string;
+    tasks: task[];
 }
 
 interface runner extends participant{

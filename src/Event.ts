@@ -230,6 +230,7 @@ class EVENT{
     }
 
      addTask(task : task) : [boolean, task, runner | null]{
+         task.supervisor.tasks.push(task);
          if(this.freeRunners === null) {
              if(this.waitingTasks === null) {
                  this.waitingTasks = [{id: this.taskCount, task: task}];
@@ -286,7 +287,7 @@ class EVENT{
      * @param admin administrator to be removed
      * @return [boolean, admin| null] boolean indicates that it has been found, admin indicates removal
      */
-    removeAdmin(admin: admin) : [boolean, admin | null] {
+    removeAdmin(admin : admin) : [boolean, admin | null] {
         if(this.owner === admin.screenName) return([true, null]);
         else {
             if(this.admins === null) return([false, null]);
@@ -304,7 +305,101 @@ class EVENT{
     }
 
     removeSupervisor(supervisor : supervisor) : [boolean, supervisor | null] {
-        
+        if(this.supervisors === null) return([false, null]);
+        if(this.supervisors.length === 0) return([false, null]);
+        else {
+            let supervisorIndex = this.supervisors.findIndex((targetSupervisor : supervisor) => {
+                return targetSupervisor === supervisor;
+            });
+            if(supervisorIndex === -1) return([true, null]);
+            else {
+                let retSupervisor : supervisor = this.supervisors[supervisorIndex];
+                this.supervisors.splice(supervisorIndex, 1);
+                return([true, retSupervisor]);
+            }
+        }
     }
+
+    removeRunner(runner : runner) : [boolean, runner | null] {
+        if(this.freeRunners === null && this.taskedRunners === null) return([false, null]);
+        else {
+            if(this.freeRunners === null) {
+                if(this.taskedRunners !== null) {
+                    let taskedIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner === runner});
+                    if(taskedIndex === -1) return([false, null]);
+                    else {
+                        let [task, targetRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
+                        if(task === null) {
+                            return([false, null]);
+                        }
+                        else {
+                            if(targetRunner === null) {
+                                return([true, null]);
+                            }
+                            else {
+                                return(this.removeRunner(targetRunner));
+                            }
+                        }
+                    }
+                }
+                else {
+                    return([false, null]);
+                }
+            }
+            else {
+                let firstIndex = this.freeRunners.findIndex((targetRunner) => {return targetRunner === runner});
+                if(firstIndex === -1) {
+                    if(this.taskedRunners === null) return([false, null]);
+                    else {
+                        let secondIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner === runner});
+                        if(secondIndex === -1) return([true, null]);
+                        else {
+                            let newRunner = this.taskedRunners[secondIndex];
+                            this.taskedRunners.splice(secondIndex, 1);
+                            return([true, newRunner]);
+                        }
+                    }
+                }
+                else {
+                    let newRunner = this.freeRunners[firstIndex];
+                    this.freeRunners.splice(firstIndex, 1);
+                    return([true, newRunner]);
+                }
+            }
+        }
+    }
+
+    taskIsAssigned(task : task) : boolean {
+        if(this.taskedRunners === null) return(false);
+        else{
+            let taskIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.task === task});
+            return(taskIndex !== -1);
+        }
+    }
+
+    removeAssignedTask(task : task) : [boolean, task | null, runner | null] {
+        if(this.taskedRunners === null) return([false, null, null]);
+        else {
+            let taskedIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.task === task});
+            if(taskedIndex === -1) return([true, null, null]);
+            else {
+                let targetTask = this.taskedRunners[taskedIndex].task;
+                if(targetTask === null) return([false, null, null]);
+                else {
+                    let [retTask, retRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
+                    if(retTask === null) return([true, null, null]);
+                    else{
+                        let [success, freeTask] = this.removeFreeTask(retTask);
+                        return([success, freeTask, retRunner]);
+                    }
+                }
+            }
+        }
+    }
+
+    removeFreeTask(task : task) : [boolean, task | null] {
+
+    }
+
     
 }
