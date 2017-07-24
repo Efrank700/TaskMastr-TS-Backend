@@ -1,6 +1,7 @@
 interface participant {
     screenName: string,
-    roomName: string
+    roomName: string,
+    socketId: number
 }
 
 enum participantTypes {
@@ -10,7 +11,9 @@ enum participantTypes {
 interface admin extends participant{
     screenName: string;
     roomName: string;
+    tasks: task[];
     location: string | null;
+    socketId: number;
 }
 
 interface supervisor extends participant{
@@ -18,10 +21,12 @@ interface supervisor extends participant{
     roomName: string;
     location: string;
     tasks: task[];
+    socketId: number;
 }
 
 interface runner extends participant{
     screenName: string;
     roomName: string;
     task: task | null;
+    socketId: number;
 }

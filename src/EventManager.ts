@@ -1,7 +1,13 @@
+"use strict";
+import {EVENT} from './Event'
 class EventManager{
-    eventList: Event[];
+    eventList: EVENT[];
 
     constructor() {
-        this.eventList = <Event[]>[]
+        this.eventList = <EVENT[]>[]
+    }
+
+    addEvent(targetEvent: EVENT) : EVENT{
+        
     }
 }

@@ -1,17 +1,17 @@
-class EVENT{
-    private eventName: string;
-    private adminKey: number;
-    private supervisorKey: number;
-    private runnerKey: number;
-    private owner: string;
-    private taskCount: number;
-    private admins: admin[] | null;
-    private supervisors: supervisor[] | null;
-    private freeRunners: runner[] | null;
-    private taskedRunners: runner[] | null;
-    private materialsAvailable: {itemName: String, count: Number}[] | null;
-    private materialsInUse: {itemName: String, count: Number, supervisorName: string}[] | null;
-    private waitingTasks: {id: Number, task: task}[] | null;
+export class EVENT{
+    private eventName: string; //Event Name in string form, also room name for socket
+    private adminKey: number; //Key for admin to login
+    private supervisorKey: number; //Key for supervisor to login
+    private runnerKey: number; //Key for runner to login
+    private owner: admin; //Administrator with highest level priviledge
+    private taskCount: number; //Running task count for the event
+    private admins: admin[]; //Admins currently active in the event
+    private supervisors: supervisor[]; //Supervisors currently active in the event
+    private freeRunners: runner[]; //Runners currently active and free of task
+    private taskedRunners: runner[]; //Runners currently active and tasked
+    private materialsAvailable: {itemName: String, count: Number}[]; //Name and count of free materials
+    private materialsInUse: {itemName: String, count: Number, supervisorName: string}[]; //Name, count, and using supervisor
+    private waitingTasks: {id: Number, task: task}[]; //Tasks currently waiting to be assigned.
     
     /**
      * @constructor
@@ -31,8 +31,7 @@ class EVENT{
      * @param tasks 
      */
     constructor(eventName: string, adminkey: number, supervisorKey: number, runnerKey: number,
-                administrator?: admin,
-                owner?: string,
+                owner: admin,
                 taskCount?: number,
                 admins?: [admin],
                 supervisors?: [supervisor],
@@ -40,40 +39,38 @@ class EVENT{
                 taskedRunners?: [runner],
                 materialsAvailable?: [{itemName: String, count: Number}],
                 materialsInUse?: [{itemName: String, count: Number, supervisorName: string}],
-                tasks?: [{id: Number, task: task}] | null) {
+                tasks?: [{id: Number, task: task}]) {
                     this.eventName = eventName;
                     this.adminKey = adminkey;
                     this.supervisorKey = supervisorKey;
                     this.runnerKey = runnerKey;
-                    this.owner = owner !== undefined? owner: "";
                     this.taskCount = taskCount !== undefined? taskCount: 0;
-                    this.admins = admins !== undefined? admins: null;
-                    if(administrator !== undefined) {
-                        this.owner = administrator.screenName;
-                        if(this.admins === null) this.admins = [administrator];
-                        else this.admins.push(administrator);
-                    }
-                    this.supervisors = supervisors !== undefined? supervisors: null;
-                    this.freeRunners = freeRunners !== undefined? freeRunners: null;
-                    this.taskedRunners = taskedRunners !== undefined? taskedRunners: null;
-                    this.materialsAvailable = materialsAvailable !== undefined? materialsAvailable: null;
-                    this.materialsInUse = materialsInUse !== undefined? materialsInUse: null;
-                    this.waitingTasks = tasks !== undefined? tasks: null;
+                    this.admins = admins !== undefined? admins: <admin[]>[];
+                    this.owner = owner;
+                    this.supervisors = supervisors !== undefined? supervisors: <supervisor[]>[];
+                    this.freeRunners = freeRunners !== undefined? freeRunners: <runner[]>[];
+                    this.taskedRunners = taskedRunners !== undefined? taskedRunners: <runner[]>[];
+                    this.materialsAvailable = materialsAvailable !== undefined? materialsAvailable: <{itemName: String, count: Number}[]>[];
+                    this.materialsInUse = materialsInUse !== undefined? materialsInUse: <{itemName: String, count: Number, supervisorName: string}[]>[];
+                    this.waitingTasks = tasks !== undefined? tasks: <{id: Number, task: task}[]>[];
                 }
 
-    /**
+    private static uniqueInsert<T>(target: T, array: T[]): void{
+        let position = array.findIndex((targetItem) => {return targetItem === target});
+        if(position === -1) array.push(target);
+    }
+    
+                /**
      * @param admin
      * @returns
      */
     addAdmin(admin: admin) : admin {
-        if(this.admins === null) this.admins = [admin];
-        else this.admins.push(admin);
+        EVENT.uniqueInsert(admin, this.admins);
         return(admin);
     }
 
     addSupervisor(supervisor: supervisor) : supervisor{
-        if(this.supervisors === null) this.supervisors = [supervisor];
-        else this.supervisors.push(supervisor);
+        EVENT.uniqueInsert(supervisor, this.supervisors);
         return(supervisor);
     }
 
@@ -83,28 +80,18 @@ class EVENT{
      */
     addRunner(runner: runner) : runner {
         if(runner.task !== null) {
-            if(this.taskedRunners === null) this.taskedRunners = [runner];
-            else this.taskedRunners.push(runner);
+            EVENT.uniqueInsert(runner, this.taskedRunners);
             return(runner);
         }
         else {
-            if(this.waitingTasks !== null) {
-                if(this.waitingTasks.length !== 0) {
-                    runner.task = this.waitingTasks[this.waitingTasks.length - 1].task;
-                    this.waitingTasks.pop();
-                    if(this.taskedRunners === null) this.taskedRunners = [runner];
-                    else this.taskedRunners.push(runner);
-                    return(runner);
-                }
-                else {
-                    if(this.freeRunners === null) this.freeRunners = [runner];
-                    else this.freeRunners.push(runner);
-                    return(runner);
-                }
+            if(this.waitingTasks.length !== 0) {
+                runner.task = this.waitingTasks[0].task;
+                this.waitingTasks.splice(0, 1);
+                EVENT.uniqueInsert(runner, this.taskedRunners);
+                return(runner);
             }
             else {
-                if(this.freeRunners === null) this.freeRunners = [runner];
-                else this.freeRunners.push(runner);
+                EVENT.uniqueInsert(runner, this.freeRunners);
                 return(runner);
             }
         }
@@ -115,12 +102,9 @@ class EVENT{
      * @returns admin target Admin 
      */
     getAdminByScreenName(screenName: string) : admin | null{
-        if(this.admins === null) return(null);
-        else {
-            let found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.screenName === screenName)}));
-            if(found === -1) return(null)
-            else return(this.admins[found]);
-        }
+        let found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.screenName === screenName)}));
+        if(found === -1) return(null);
+        else return(this.admins[found]);
     }
 
     /**
@@ -128,12 +112,9 @@ class EVENT{
      * @returns supervisor target supervisor 
      */
     getSupervisorByScreenName(screenName: string) : supervisor | null{
-        if(this.supervisors === null) return(null);
-        else {
-            let found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.screenName === screenName)}));
-            if(found === -1) return(null)
-            else return(this.supervisors[found]);
-        }
+        let found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.screenName === screenName)}));
+        if(found === -1) return(null)
+        else return(this.supervisors[found]);
     }
 
     /**
@@ -141,26 +122,47 @@ class EVENT{
      *@return runner target runner 
      */
      getRunnerByScreenName(screenName: string) : runner | null{
-        if(this.freeRunners === null) {
-            if(this.taskedRunners === null) return(null);
-            else {
-                let runnerPos : number = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
-                if(runnerPos === -1) return(null);
-                else return(this.taskedRunners[runnerPos]);
-            }
-        }
-        else {
-            let runnerPos : number = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
-            if(runnerPos === -1) {
-                if(this.taskedRunners === null) return(null);
-                else {
-                    runnerPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
-                    if(runnerPos === -1) return(null);
-                    else return(this.taskedRunners[runnerPos]);
-                }
-            }
-            else return(this.freeRunners[runnerPos]);
-        }
+       let freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
+       if(freePos !== -1) return(this.freeRunners[freePos]);
+       else{
+           let taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
+           if(taskedPos !== -1) return(this.taskedRunners[taskedPos]);
+           else return(null);
+       }
+     }
+
+         /**
+     * @param screenName
+     * @returns admin target Admin 
+     */
+    getAdminBySocket(socketID: number) : admin | null{
+        let found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.socketId === socketID)}));
+        if(found === -1) return(null);
+        else return(this.admins[found]);
+    }
+
+    /**
+     * @param screenName
+     * @returns supervisor target supervisor 
+     */
+    getSupervisorBySocket(socketID: number) : supervisor | null{
+        let found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.socketId === socketID)}));
+        if(found === -1) return(null)
+        else return(this.supervisors[found]);
+    }
+
+    /**
+     *@param screenName
+     *@return runner target runner 
+     */
+     getRunnerBySocket(socketID: number) : runner | null{
+       let freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.socketId === socketID});
+       if(freePos !== -1) return(this.freeRunners[freePos]);
+       else{
+           let taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.socketId === socketID});
+           if(taskedPos !== -1) return(this.taskedRunners[taskedPos]);
+           else return(null);
+       }
      }
 
      /**
@@ -169,19 +171,15 @@ class EVENT{
       * @return runner | null 
       */
      private assignTask(task : task, runner : runner) : runner | null {
-         if(this.freeRunners === null) return(null);
-         else {
-             let runnerPos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === runner.screenName});
-             if(runnerPos === -1) return(null);
-             else {
-                 let targetRunner = this.freeRunners[runnerPos];
-                 targetRunner.task = task;
-                 this.freeRunners.splice(runnerPos, 1);
-                 if(this.taskedRunners === null) this.taskedRunners = [targetRunner];
-                 else this.taskedRunners.push(targetRunner);
-                 return(targetRunner);
-             }
-         }
+        let runnerPos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === runner.screenName});
+        if(runnerPos === -1) return(null);
+        else {
+            let targetRunner = this.freeRunners[runnerPos];
+            targetRunner.task = task;
+            this.freeRunners.splice(runnerPos, 1);
+            EVENT.uniqueInsert(targetRunner, this.taskedRunners);
+            return(targetRunner);
+        }
      }
 
      /**
@@ -192,44 +190,19 @@ class EVENT{
         if(runner.task === null) return([null, null]);
         let runnerTask : task = runner.task;
         runner.task = null;
-        if(this.taskedRunners === null) return([runnerTask, null]);
+        let runnerIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner === runner});
+        if(runnerIndex === -1) {
+            if(runner.roomName === this.eventName) {
+                return([runnerTask, runner]);
+            }
+            else return([null, runner]);
+        }
         else {
-            let runnerIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner === runner});
-            if(runnerIndex === -1) {
-                if(runner.roomName === this.eventName) {
-                    if(this.freeRunners === null) {
-                        this.freeRunners = [runner];
-                        return([runnerTask, runner]);
-                    }
-                    else {
-                        let secondIndex = this.freeRunners.findIndex((targetRunner) => {return targetRunner === runner});
-                        if(secondIndex === -1) {
-                            this.freeRunners.push(runner);
-                            return([runnerTask, runner]);
-                        }
-                        else return([runnerTask, runner]);
-                    }
-                }
-                else return([null, runner]);
+            this.taskedRunners.splice(runnerIndex, 1);
+            if(runner.roomName === this.eventName) {
+                return([runnerTask, runner]);
             }
-            else {
-                this.taskedRunners.splice(runnerIndex, 1);
-                if(runner.roomName === this.eventName) {
-                    if(this.freeRunners === null) {
-                        this.freeRunners = [runner];
-                        return([runnerTask, runner]);
-                    }
-                    else {
-                        let secondIndex = this.freeRunners.findIndex((targetRunner) => {return targetRunner === runner});
-                        if(secondIndex === -1) {
-                            this.freeRunners.push(runner);
-                            return([runnerTask, runner]);
-                        }
-                        else return([runnerTask, runner]);
-                    }
-                }
-                else return([null, runner]);
-            }
+            else return([null, runner]);
         }
     }
     /**
@@ -238,56 +211,28 @@ class EVENT{
      */
      addTask(task : task) : [boolean, task, runner | null]{
          task.supervisor.tasks.push(task);
-         if(this.freeRunners === null) {
-             if(this.waitingTasks === null) {
-                 this.waitingTasks = [{id: this.taskCount, task: task}];
-                 this.taskCount++;
-                 return([false, task, null]);
-             }
-             else{
-                 this.waitingTasks.push({id: this.taskCount, task: task});
-                 this.taskCount++;
-                 return([false, task, null]);
-             }
-         }
-         else{
-            if(this.freeRunners.length > 0) {
-                let res : runner | null;
-                let i : number = 0;
-                do {
-                    res = this.assignTask(task, this.freeRunners[i]);
-                    i++;
-                } while(i < this.freeRunners.length && res == null);
-                if(res == null) {
-                    if(this.waitingTasks === null) {
-                        this.waitingTasks = [{id: this.taskCount, task: task}];
-                        this.taskCount++;
-                        return([false, task, null]);
-                    }   
-                    else{
-                        this.waitingTasks.push({id: this.taskCount, task: task});
-                        this.taskCount++;
-                        return([false, task, null]);
-                    }
-                }
-                else {
-                    let runner : runner | null = this.assignTask(task, res);
-                    return([true, task, runner]);
-                }
+        if(this.freeRunners.length > 0) {
+            let res : runner | null = null;
+            let i : number = 0;
+            while(i < this.freeRunners.length && res == null); {
+                res = this.assignTask(task, this.freeRunners[i]);
+                i++;
+            }
+            if(res == null) {
+                this.waitingTasks.push({id: this.taskCount, task: task});
+                this.taskCount++;
+                return([false, task, null]);
             }
             else {
-                if(this.waitingTasks === null) {
-                    this.waitingTasks = [{id: this.taskCount, task: task}];
-                    this.taskCount++;
-                    return([false, task, null]);
-                }   
-                else{
-                    this.waitingTasks.push({id: this.taskCount, task: task});
-                    this.taskCount++;
-                    return([false, task, null]);
-                }
+                let runner : runner | null = this.assignTask(task, res);
+                return([true, task, runner]);
             }
-         }
+        }
+        else {
+            this.waitingTasks.push({id: this.taskCount, task: task});
+            this.taskCount++;
+            return([false, task, null]);
+        }
      }
 
     /**
@@ -295,18 +240,20 @@ class EVENT{
      * @return [boolean, admin| null] boolean indicates that it has been found, admin indicates removal
      */
     removeAdmin(admin : admin) : [boolean, admin | null] {
-        if(this.owner === admin.screenName) return([true, null]);
+        if(this.owner === admin) return([true, null]);
+        if(this.admins.length === 0) return([false, null]);
         else {
-            if(this.admins === null) return([false, null]);
-            else {
-                let adminIndex: number = this.admins.findIndex((targetAdmin: admin) => {
-                    return(targetAdmin.screenName === admin.screenName);
-                })
-                if(adminIndex === -1) return([false, null]);
-                else{
-                    this.admins.splice(adminIndex, 1);
-                    return([true, admin]);
-                }
+            let adminIndex: number = this.admins.findIndex((targetAdmin: admin) => {
+                return(targetAdmin.screenName === admin.screenName);
+            })
+            if(adminIndex === -1) return([false, null]);
+            else{
+                let retAdmin : admin = this.admins[adminIndex];
+                retAdmin.tasks.forEach(element => {
+                    this.removeTask(element);
+                });
+                this.admins.splice(adminIndex, 1);
+                return([true, admin]);
             }
         }
     }
@@ -315,7 +262,6 @@ class EVENT{
      * @returns [removed, removedSupervisor]
      */
     removeSupervisor(supervisor : supervisor) : [boolean, supervisor | null] {
-        if(this.supervisors === null) return([false, null]);
         if(this.supervisors.length === 0) return([false, null]);
         else {
             let supervisorIndex = this.supervisors.findIndex((targetSupervisor : supervisor) => {
@@ -325,7 +271,7 @@ class EVENT{
             else {
                 let retSupervisor : supervisor = this.supervisors[supervisorIndex];
                 retSupervisor.tasks.forEach(element => {
-                    
+                    this.removeTask(element);
                 });
                 this.supervisors.splice(supervisorIndex, 1);
                 return([true, retSupervisor]);
@@ -334,54 +280,21 @@ class EVENT{
     }
     /**
      * @param runner
-     * @returns [found, removedRunner]
+     * @returns [tasked, removedRunner]
      */
     removeRunner(runner : runner) : [boolean, runner | null] {
-        if(this.freeRunners === null && this.taskedRunners === null) return([false, null]);
-        else {
-            if(this.freeRunners === null) {
-                if(this.taskedRunners !== null) {
-                    let taskedIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner === runner});
-                    if(taskedIndex === -1) return([false, null]);
-                    else {
-                        let [task, targetRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
-                        if(task === null) {
-                            return([false, null]);
-                        }
-                        else {
-                            if(targetRunner === null) {
-                                return([true, null]);
-                            }
-                            else {
-                                return(this.removeRunner(targetRunner));
-                            }
-                        }
-                    }
-                }
-                else {
-                    return([false, null]);
-                }
-            }
+        let freePosition = this.freeRunners.findIndex((freeRunner) => {return runner === freeRunner});
+        if(freePosition === -1) {
+            let taskedPosition = this.taskedRunners.findIndex((taskedRunner) => {return runner === taskedRunner});
+            if(taskedPosition === -1) return([false, null]);
             else {
-                let firstIndex = this.freeRunners.findIndex((targetRunner) => {return targetRunner === runner});
-                if(firstIndex === -1) {
-                    if(this.taskedRunners === null) return([false, null]);
-                    else {
-                        let secondIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner === runner});
-                        if(secondIndex === -1) return([true, null]);
-                        else {
-                            let newRunner = this.taskedRunners[secondIndex];
-                            this.taskedRunners.splice(secondIndex, 1);
-                            return([true, newRunner]);
-                        }
-                    }
-                }
-                else {
-                    let newRunner = this.freeRunners[firstIndex];
-                    this.freeRunners.splice(firstIndex, 1);
-                    return([true, newRunner]);
-                }
+                this.unassignTask(this.taskedRunners[taskedPosition]);
+                return([true, this.removeRunner(runner)[1]]);
             }
+        }
+        else{
+            this.freeRunners.splice(freePosition, 1);
+            return([false, runner]);
         }
     }
     /**
@@ -389,31 +302,24 @@ class EVENT{
      * @returns isAssigned
      */
     private taskIsAssigned(task : task) : boolean {
-        if(this.taskedRunners === null) return(false);
-        else{
-            let taskIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.task === task});
-            return(taskIndex !== -1);
-        }
+        let taskIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.task === task});
+        return(taskIndex !== -1);
     }
     /**
      * @param task
-     * @returns [tasksExist, taskRemoved, taskedRunner] 
+     * @returns [taskRemoved, taskedRunner] 
      */
-    private removeAssignedTask(task : task) : [boolean, task | null, runner | null] {
-        if(this.taskedRunners === null) return([false, null, null]);
+    private removeAssignedTask(task : task) : [task | null, runner | null] {
+        let taskedIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.task === task});
+        if(taskedIndex === -1) return([null, null]);
         else {
-            let taskedIndex = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.task === task});
-            if(taskedIndex === -1) return([true, null, null]);
+            let targetTask = this.taskedRunners[taskedIndex].task;
+            if(targetTask === null) return([null, null]);
             else {
-                let targetTask = this.taskedRunners[taskedIndex].task;
-                if(targetTask === null) return([false, null, null]);
-                else {
-                    let [retTask, retRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
-                    if(retTask === null) return([true, null, null]);
-                    else{
-                        let [success, freeTask] = this.removeFreeTask(retTask);
-                        return([success, freeTask, retRunner]);
-                    }
+                let [retTask, retRunner] = this.unassignTask(this.taskedRunners[taskedIndex]);
+                if(retTask === null) return([null, null]);
+                else{
+                    return([retTask, retRunner]);
                 }
             }
         }
@@ -423,26 +329,48 @@ class EVENT{
      * @returns [removed, taskInEvent] 
      */
     private removeFreeTask(task : task) : [boolean, task | null] {
-        if(this.waitingTasks === null) return([false, null]);
+        let taskIndex = this.waitingTasks.findIndex((targetTask) => {return targetTask.task === task});
+        if(taskIndex === -1) return([true, null]);
         else {
-            let taskIndex = this.waitingTasks.findIndex((targetTask) => {return targetTask.task === task});
-            if(taskIndex === -1) return([true, null]);
-            else {
-                let targetTask = this.waitingTasks[taskIndex];
-                this.waitingTasks.splice(taskIndex, 1);
-                return([true, targetTask.task]);
-            }
+            let targetTask = this.waitingTasks[taskIndex];
+            this.waitingTasks.splice(taskIndex, 1);
+            return([true, targetTask.task]);
         }
     }
     /**
      * @param task
      * @returns [removed, taskInEvent, taskedRunner] 
      */
-    removeTask(task : task) : [boolean, task | null, runner | null] {
+    removeTask(task : task) : [task | null, runner | null] {
         if(this.taskIsAssigned(task)) return(this.removeAssignedTask(task));
         else {
-            let [retBool, retTask] = this.removeFreeTask(task)
-            return([retBool, retTask, null]);
+            let retRemFreeTask = this.removeFreeTask(task);
+            let [retBool, retTask] = [retRemFreeTask[0], retRemFreeTask[1]];
+            return([retTask, null]);
         }
+    }
+
+    adminList() : string[] {
+        let ret = <string[]>[];
+        this.admins.forEach(element => {
+            ret.push(element.screenName);
+        });
+        return(ret);
+    }
+    
+    supervisorList() : string[] {
+        let ret = <string[]>[];
+        this.supervisors.forEach(element =>{
+            ret.push(element.screenName);
+        })
+        return(ret);
+    }
+
+    freeRunnerList() : string[] {
+        let ret = <string[]>[];
+        this.freeRunners.forEach(element => {
+            ret.push(element.screenName);
+        });
+        return(ret);
     }
 }
