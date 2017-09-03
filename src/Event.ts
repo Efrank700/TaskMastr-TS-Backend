@@ -1,4 +1,13 @@
-export class EVENT{
+/**
+ * This file contains the class description for the TaskMastrEvent Object, which directly defines the 
+ * behavior of individual events for taskmastr
+ */
+
+"use strict";
+import * as helper from "./helperFunctions"
+import {participant, admin, runner, upperLevelWorker, supervisor, task} from "./Participant"
+export {participant, admin, runner, upperLevelWorker, supervisor, task}
+export class TaskMastrEvent{
     private eventName: string; //Event Name in string form, also room name for socket
     private adminKey: number; //Key for admin to login
     private supervisorKey: number; //Key for supervisor to login
@@ -9,9 +18,10 @@ export class EVENT{
     private supervisors: supervisor[]; //Supervisors currently active in the event
     private freeRunners: runner[]; //Runners currently active and free of task
     private taskedRunners: runner[]; //Runners currently active and tasked
-    private materialsAvailable: {itemName: String, count: Number}[]; //Name and count of free materials
-    private materialsInUse: {itemName: String, count: Number, supervisorName: string}[]; //Name, count, and using supervisor
-    private waitingTasks: {id: Number, task: task}[]; //Tasks currently waiting to be assigned.
+    private materialsAvailable: {itemName: string, count: number}[]; //Name and count of free materials
+    private materialsInUse: {itemName: string, count: number, user: upperLevelWorker}[]; //Name, count, and using supervisor
+    private unfinishedTasks: {assigned: runner | null, task: task}[];
+    private waitingTasks: {id: number, task: task}[]; //Tasks currently waiting to be assigned.
     
     /**
      * @constructor
@@ -31,46 +41,100 @@ export class EVENT{
      * @param tasks 
      */
     constructor(eventName: string, adminkey: number, supervisorKey: number, runnerKey: number,
-                owner: admin,
-                taskCount?: number,
-                admins?: [admin],
-                supervisors?: [supervisor],
-                freeRunners?: [runner],
-                taskedRunners?: [runner],
-                materialsAvailable?: [{itemName: String, count: Number}],
-                materialsInUse?: [{itemName: String, count: Number, supervisorName: string}],
-                tasks?: [{id: Number, task: task}]) {
+                owner: admin, materialsAvailable: {itemName: string, count: number}[]) {
                     this.eventName = eventName;
                     this.adminKey = adminkey;
                     this.supervisorKey = supervisorKey;
                     this.runnerKey = runnerKey;
-                    this.taskCount = taskCount !== undefined? taskCount: 0;
-                    this.admins = admins !== undefined? admins: <admin[]>[];
+                    this.taskCount = 0;
+                    this.admins =  <admin[]>[owner];
                     this.owner = owner;
-                    this.supervisors = supervisors !== undefined? supervisors: <supervisor[]>[];
-                    this.freeRunners = freeRunners !== undefined? freeRunners: <runner[]>[];
-                    this.taskedRunners = taskedRunners !== undefined? taskedRunners: <runner[]>[];
-                    this.materialsAvailable = materialsAvailable !== undefined? materialsAvailable: <{itemName: String, count: Number}[]>[];
-                    this.materialsInUse = materialsInUse !== undefined? materialsInUse: <{itemName: String, count: Number, supervisorName: string}[]>[];
-                    this.waitingTasks = tasks !== undefined? tasks: <{id: Number, task: task}[]>[];
+                    this.supervisors =  <supervisor[]>[];
+                    this.freeRunners =  <runner[]>[];
+                    this.taskedRunners =  <runner[]>[];
+                    this.materialsAvailable =  <{itemName: string, count: number}[]>[];
+                    this.materialsInUse =  <{itemName: string, count: number, user: upperLevelWorker}[]>[];
+                    this.unfinishedTasks = <{assigned: runner | null, task:task}[]>[];
+                    this.waitingTasks =  <{id: number, task: task}[]>[];
                 }
+    
+	 get $eventName(): string {
+		return this.eventName;
+	}
 
-    private static uniqueInsert<T>(target: T, array: T[]): void{
-        let position = array.findIndex((targetItem) => {return targetItem === target});
-        if(position === -1) array.push(target);
+	 set $eventName(value: string) {
+		this.eventName = value;
+	}
+
+	 get $adminKey(): number {
+		return this.adminKey;
+	}
+
+	 get $supervisorKey(): number {
+		return this.supervisorKey;
+	}
+
+	 get $runnerKey(): number {
+		return this.runnerKey;
+	}
+
+	 get $owner(): admin {
+		return this.owner;
+	}
+
+	 get $taskCount(): number {
+		return this.taskCount;
+	}
+
+     adminList() : admin[] {
+        let ret = <admin[]>[];
+        this.admins.forEach((element) => {
+            
+            ret.push(element);
+        });
+        return(ret);
     }
     
-                /**
+     supervisorList() : supervisor[] {
+        const ret = [] as supervisor[];
+        this.supervisors.forEach(element =>{
+            ret.push(element);
+        });
+        return(ret);
+    }
+
+    freeRunnerList() : runner[] {
+        const ret = [] as runner[];
+        this.freeRunners.forEach(element => {
+            ret.push(element);
+        });
+        return(ret);
+    }
+
+    taskList(){
+        const ret = <{assigned: runner | null, task:task}[]>[];
+        this.unfinishedTasks.forEach(element => {
+            ret.push(element);
+        })
+        return(ret);
+    }
+
+
+    /******************************************************************************************************************************************************************
+     * Participant Interactions
+     *****************************************************************************************************************************************************************/
+   
+     /**
      * @param admin
      * @returns
      */
-    addAdmin(admin: admin) : admin {
-        EVENT.uniqueInsert(admin, this.admins);
+     addAdmin(admin: admin) : admin {
+        helper.uniqueInsert(admin, this.admins);
         return(admin);
     }
 
-    addSupervisor(supervisor: supervisor) : supervisor{
-        EVENT.uniqueInsert(supervisor, this.supervisors);
+     addSupervisor(supervisor: supervisor) : supervisor{
+        helper.uniqueInsert(supervisor, this.supervisors);
         return(supervisor);
     }
 
@@ -78,20 +142,20 @@ export class EVENT{
      * @param runner to be added
      * @returns runner added
      */
-    addRunner(runner: runner) : runner {
+     addRunner(runner: runner) : runner {
         if(runner.task !== null) {
-            EVENT.uniqueInsert(runner, this.taskedRunners);
+            helper.uniqueInsert(runner, this.taskedRunners);
             return(runner);
         }
         else {
             if(this.waitingTasks.length !== 0) {
                 runner.task = this.waitingTasks[0].task;
                 this.waitingTasks.splice(0, 1);
-                EVENT.uniqueInsert(runner, this.taskedRunners);
+                helper.uniqueInsert(runner, this.taskedRunners);
                 return(runner);
             }
             else {
-                EVENT.uniqueInsert(runner, this.freeRunners);
+                helper.uniqueInsert(runner, this.freeRunners);
                 return(runner);
             }
         }
@@ -101,8 +165,8 @@ export class EVENT{
      * @param screenName
      * @returns admin target Admin 
      */
-    getAdminByScreenName(screenName: string) : admin | null{
-        let found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.screenName === screenName)}));
+     getAdminByScreenName(screenName: string) : admin | null{
+        const found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.screenName === screenName)}));
         if(found === -1) return(null);
         else return(this.admins[found]);
     }
@@ -111,9 +175,9 @@ export class EVENT{
      * @param screenName
      * @returns supervisor target supervisor 
      */
-    getSupervisorByScreenName(screenName: string) : supervisor | null{
-        let found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.screenName === screenName)}));
-        if(found === -1) return(null)
+     getSupervisorByScreenName(screenName: string) : supervisor | null{
+        const found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.screenName === screenName)}));
+        if (found === -1) return(null);
         else return(this.supervisors[found]);
     }
 
@@ -121,11 +185,11 @@ export class EVENT{
      *@param screenName
      *@return runner target runner 
      */
-     getRunnerByScreenName(screenName: string) : runner | null{
-       let freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
+      getRunnerByScreenName(screenName: string) : runner | null{
+       const freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
        if(freePos !== -1) return(this.freeRunners[freePos]);
        else{
-           let taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
+           const taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
            if(taskedPos !== -1) return(this.taskedRunners[taskedPos]);
            else return(null);
        }
@@ -135,8 +199,8 @@ export class EVENT{
      * @param screenName
      * @returns admin target Admin 
      */
-    getAdminBySocket(socketID: number) : admin | null{
-        let found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.socketId === socketID)}));
+     getAdminBySocket(socketId: number) : admin | null{
+        const found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.socketId === socketId)}));
         if(found === -1) return(null);
         else return(this.admins[found]);
     }
@@ -145,9 +209,9 @@ export class EVENT{
      * @param screenName
      * @returns supervisor target supervisor 
      */
-    getSupervisorBySocket(socketID: number) : supervisor | null{
-        let found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.socketId === socketID)}));
-        if(found === -1) return(null)
+     getSupervisorBySocket(socketId: number) : supervisor | null{
+        const found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.socketId === socketId)}));
+        if (found === -1) return(null);
         else return(this.supervisors[found]);
     }
 
@@ -155,29 +219,178 @@ export class EVENT{
      *@param screenName
      *@return runner target runner 
      */
-     getRunnerBySocket(socketID: number) : runner | null{
-       let freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.socketId === socketID});
+      getRunnerBySocket(socketId: number) : runner | null{
+       const freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.socketId === socketId});
        if(freePos !== -1) return(this.freeRunners[freePos]);
        else{
-           let taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.socketId === socketID});
+           const taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.socketId === socketId});
            if(taskedPos !== -1) return(this.taskedRunners[taskedPos]);
            else return(null);
        }
-     }
+    }
+    
+    /**
+     * @param admin administrator to be removed
+     * @return [boolean, admin| null] boolean indicates that it has been found, admin indicates removal
+     */
+     removeAdmin(admin : admin) : [boolean, admin | null] {
+        if(this.owner === admin) return([true, null]);
+        if(this.admins.length === 0) return([false, null]);
+        else {
+            const adminIndex: number = this.admins.findIndex((targetAdmin: admin) => {
+                return(targetAdmin.screenName === admin.screenName);
+            });
+            if(adminIndex === -1) return([false, null]);
+            else{
+                const retAdmin : admin = this.admins[adminIndex];
+                retAdmin.tasks.forEach(element => {
+                    this.removeTask(element);
+                });
+                this.admins.splice(adminIndex, 1);
+                return([true, admin]);
+            }
+        }
+    }
+    
+    /**
+     * @param supervisor
+     * @returns [removed, removedSupervisor] removed indicates code success, removedSupervisor indicates
+     * the actual removed object
+     */
+     removeSupervisor(supervisor : supervisor) : [boolean, supervisor | null] {
+        if(this.supervisors.length === 0) return([false, null]);
+        else {
+            let supervisorIndex = this.supervisors.findIndex((targetSupervisor : supervisor) => {
+                return targetSupervisor === supervisor;
+            });
+            if(supervisorIndex === -1) return([true, null]);
+            else {
+                let retSupervisor : supervisor = this.supervisors[supervisorIndex];
+                retSupervisor.tasks.forEach(element => {
+                    this.removeTask(element);
+                });
+                this.supervisors.splice(supervisorIndex, 1);
+                return([true, retSupervisor]);
+            }
+        }
+    }
+    
+    /**
+     * @param runner
+     * @returns [tasked, removedRunner] tasked indicates if a task had to be assigned, removedRunner
+     * indicates the actual removed object
+     */
+     removeRunner(runner : runner) : [boolean, runner | null] {
+        let freePosition = this.freeRunners.findIndex((freeRunner) => {return runner === freeRunner});
+        if(freePosition === -1) {
+            let taskedPosition = this.taskedRunners.findIndex((taskedRunner) => {return runner === taskedRunner});
+            if(taskedPosition === -1) return([false, null]);
+            else {
+                this.unassignTask(this.taskedRunners[taskedPosition]);
+                return([true, this.removeRunner(runner)[1]]);
+            }
+        }
+        else{
+            this.freeRunners.splice(freePosition, 1);
+            return([false, runner]);
+        }
+    }
 
-     /**
+
+    /******************************************************************************************************************************************************************
+     * Materials Interactions
+     *****************************************************************************************************************************************************************/
+    /**
+     * @param name: the name of the  object to get the count of
+     * @return amount of that material that is free
+     */
+     getMaterialCount(name: string): number {
+        let position = this.materialsAvailable.findIndex((element) => {return element.itemName === name});
+        if(position === -1) return 0;
+        return(this.materialsAvailable[position].count);
+    }
+
+    /**
+     * @returns the list of all available materials
+     */
+    getMaterialList(): {itemName: string, count: number}[]{
+        let retArr: {itemName: string, count: number}[] = [];
+        this.materialsAvailable.forEach(element => {
+            retArr.push(element);
+        });
+        return(retArr);
+    }
+
+    addFreeMaterials(name: string, quantity: number): boolean{
+        let position = this.materialsAvailable.findIndex((element) => {
+            return element.itemName === name
+        });
+        if(position === -1) {
+            this.materialsAvailable.push({itemName: name, count: quantity});
+            return(false);
+        }
+        this.materialsAvailable[position].count += quantity;
+        return(true);
+    }
+
+    removeFreeMaterials(name: string, quantity: number): number{
+        let position = this.materialsAvailable.findIndex((element) => {
+            return(element.itemName === name);
+        });
+        if(position === -1) return 0;
+        else if(this.materialsAvailable[position].count <= quantity) {
+            let removed = this.materialsAvailable[position].count;
+            this.materialsAvailable[position].count = 0;
+            return(removed);
+        }
+        else {
+            this.materialsAvailable[position].count -= quantity;
+            return(quantity);
+        }
+    }
+
+    checkoutMaterials(name: string, quantity: number, caller: upperLevelWorker): [boolean, number]{
+        let position = this.materialsAvailable.findIndex((element) => {return element.itemName === name});
+        if(position === -1) return([false, 0]);
+        if(this.materialsAvailable[position].count < quantity) {
+            return([false, this.materialsAvailable[position].count]);
+        }
+        else {
+            this.materialsAvailable[position].count -= quantity;
+            let matPosition = this.materialsInUse.findIndex((element) => {
+                return(element.user === caller && element.itemName === name);
+            });
+            if(matPosition === -1) {
+                this.materialsInUse.push({itemName: name, count: quantity, user: caller});
+                return([true, quantity]);
+            }
+            else {
+                this.materialsInUse[matPosition].count += quantity;
+                return([true, quantity]);
+            }
+        }
+    }
+    
+    returnMaterials(name: string, quantity: number, supervisor: supervisor) {
+
+    }
+    
+    /******************************************************************************************************************************************************************
+     * Task Interactions
+     *****************************************************************************************************************************************************************/
+         /**
       * @param task 
       * @param runner
       * @return runner | null 
       */
      private assignTask(task : task, runner : runner) : runner | null {
-        let runnerPos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === runner.screenName});
+        const runnerPos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === runner.screenName});
         if(runnerPos === -1) return(null);
         else {
-            let targetRunner = this.freeRunners[runnerPos];
+            const targetRunner = this.freeRunners[runnerPos];
             targetRunner.task = task;
             this.freeRunners.splice(runnerPos, 1);
-            EVENT.uniqueInsert(targetRunner, this.taskedRunners);
+            helper.uniqueInsert(targetRunner, this.taskedRunners);
             return(targetRunner);
         }
      }
@@ -209,12 +422,12 @@ export class EVENT{
      * @param task
      * @returns [assigned, task, assignedRunner]
      */
-     addTask(task : task) : [boolean, task, runner | null]{
+      addTask(task : task) : [boolean, task, runner | null]{
          task.supervisor.tasks.push(task);
         if(this.freeRunners.length > 0) {
             let res : runner | null = null;
             let i : number = 0;
-            while(i < this.freeRunners.length && res == null); {
+            while(i < this.freeRunners.length && res == null) {
                 res = this.assignTask(task, this.freeRunners[i]);
                 i++;
             }
@@ -235,68 +448,7 @@ export class EVENT{
         }
      }
 
-    /**
-     * @param admin administrator to be removed
-     * @return [boolean, admin| null] boolean indicates that it has been found, admin indicates removal
-     */
-    removeAdmin(admin : admin) : [boolean, admin | null] {
-        if(this.owner === admin) return([true, null]);
-        if(this.admins.length === 0) return([false, null]);
-        else {
-            let adminIndex: number = this.admins.findIndex((targetAdmin: admin) => {
-                return(targetAdmin.screenName === admin.screenName);
-            })
-            if(adminIndex === -1) return([false, null]);
-            else{
-                let retAdmin : admin = this.admins[adminIndex];
-                retAdmin.tasks.forEach(element => {
-                    this.removeTask(element);
-                });
-                this.admins.splice(adminIndex, 1);
-                return([true, admin]);
-            }
-        }
-    }
-    /**
-     * @param supervisor
-     * @returns [removed, removedSupervisor]
-     */
-    removeSupervisor(supervisor : supervisor) : [boolean, supervisor | null] {
-        if(this.supervisors.length === 0) return([false, null]);
-        else {
-            let supervisorIndex = this.supervisors.findIndex((targetSupervisor : supervisor) => {
-                return targetSupervisor === supervisor;
-            });
-            if(supervisorIndex === -1) return([true, null]);
-            else {
-                let retSupervisor : supervisor = this.supervisors[supervisorIndex];
-                retSupervisor.tasks.forEach(element => {
-                    this.removeTask(element);
-                });
-                this.supervisors.splice(supervisorIndex, 1);
-                return([true, retSupervisor]);
-            }
-        }
-    }
-    /**
-     * @param runner
-     * @returns [tasked, removedRunner]
-     */
-    removeRunner(runner : runner) : [boolean, runner | null] {
-        let freePosition = this.freeRunners.findIndex((freeRunner) => {return runner === freeRunner});
-        if(freePosition === -1) {
-            let taskedPosition = this.taskedRunners.findIndex((taskedRunner) => {return runner === taskedRunner});
-            if(taskedPosition === -1) return([false, null]);
-            else {
-                this.unassignTask(this.taskedRunners[taskedPosition]);
-                return([true, this.removeRunner(runner)[1]]);
-            }
-        }
-        else{
-            this.freeRunners.splice(freePosition, 1);
-            return([false, runner]);
-        }
-    }
+
     /**
      * @param task 
      * @returns isAssigned
@@ -337,40 +489,18 @@ export class EVENT{
             return([true, targetTask.task]);
         }
     }
+
+    
     /**
      * @param task
      * @returns [removed, taskInEvent, taskedRunner] 
      */
-    removeTask(task : task) : [task | null, runner | null] {
+     removeTask(task : task) : [task | null, runner | null] {
         if(this.taskIsAssigned(task)) return(this.removeAssignedTask(task));
         else {
             let retRemFreeTask = this.removeFreeTask(task);
-            let [retBool, retTask] = [retRemFreeTask[0], retRemFreeTask[1]];
+            let retTask = retRemFreeTask[1];
             return([retTask, null]);
         }
-    }
-
-    adminList() : string[] {
-        let ret = <string[]>[];
-        this.admins.forEach(element => {
-            ret.push(element.screenName);
-        });
-        return(ret);
-    }
-    
-    supervisorList() : string[] {
-        let ret = <string[]>[];
-        this.supervisors.forEach(element =>{
-            ret.push(element.screenName);
-        })
-        return(ret);
-    }
-
-    freeRunnerList() : string[] {
-        let ret = <string[]>[];
-        this.freeRunners.forEach(element => {
-            ret.push(element.screenName);
-        });
-        return(ret);
     }
 }

@@ -1,5 +1,6 @@
 const gulp = require('gulp');
 const ts = require('gulp-typescript');
+const tester = require('gulp-shell');
 const JSON_FILES = ['src/*.json', 'src/**/*.json'];
 
 // pull in the project TypeScript config
@@ -12,7 +13,7 @@ gulp.task('scripts', () => {
 });
 
 gulp.task('watch', ['scripts'], () => {
-  gulp.watch('src/**/*.ts', ['scripts']);
+  gulp.watch('src/**/*.ts', ['scripts', 'test']);
 });
 
 gulp.task('assets', function() {
@@ -20,4 +21,12 @@ gulp.task('assets', function() {
   .pipe(gulp.dest('dist'));
 });
 
-gulp.task('default', ['watch', 'assets']);
+gulp.task('test', tester.task('npm test'));
+
+gulp.task('watchTest', ['test'], () => {
+  gulp.watch('src/test/test.ts')
+})
+
+gulp.task('checkProj', ['watch', 'test']);
+
+gulp.task('default', ['checkProj', 'assets']);
