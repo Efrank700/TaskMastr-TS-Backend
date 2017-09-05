@@ -41,7 +41,8 @@ class EventManager{
     /****************************************************************************************************
      *************************************USER MANIPULATION**********************************************
      ***************************************************************************************************/
-    addAdmin(target: admin) : admin | null{
+    
+     addAdmin(target: admin) : admin | null{
         let room = this.getEventByName(target.roomName);
         if(room === null) return(null);
         return(room.addAdmin(target));
@@ -77,25 +78,8 @@ class EventManager{
         return(room.removeRunner(target));
     }
     
+    /****************************************************************************************************
+     *************************************USER MANIPULATION**********************************************
+     ***************************************************************************************************/
     
-    addTask(target: task) : [boolean, task, runner | null] | null{
-        let room = this.getEventByName(target.supervisor.roomName);
-        if(room === null) return(null);
-        let results = room.addTask(target);
-        return(results);
-    }
-
-    addMaterials(materialName: string, number: number, roomName: string) {
-        let room = this.getEventByName(roomName);
-        if(room === null) return(null);
-        let results = room.addFreeMaterials(materialName, number);
-        return(results);
-    }
-
-    removeMaterials(materialName: string, number: number, roomName: string) {
-        let room = this.getEventByName(roomName);
-        if(room === null) return(null);
-        let results = room.removeFreeMaterials(materialName, number);
-        return(results);
-    }
 }

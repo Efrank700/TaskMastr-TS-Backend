@@ -7,8 +7,11 @@ import {participant, admin, supervisor, runner} from "../Participant";
 
 const genAdmin: admin = {screenName: "hello", roomName: "hello", tasks: <task[]>[], location: null, socketId: 10};
 const secondAdmin: admin = {screenName: "hi", roomName: "hello", tasks: <task[]>[], location: null, socketId: 9};
+const falseAdmin: admin = {screenName: "not", roomName: "hello", tasks: <task[]>[], location: null, socketId: 9};
 const genSupervisor: supervisor = {screenName: "wow", roomName: "hello", tasks: <task[]>[], location: "null", socketId: 11};
+const falseSupervisor: supervisor = {screenName: "nope", roomName: "hello", tasks: <task[]>[], location: "null", socketId: 12};
 const genRunner: runner = {screenName: "woot", roomName: "hello", task: null, socketId: 15};
+const falseRunner: runner = {screenName: "haha", roomName: "hello", task: null, socketId: 15};
 
 describe('Event Generation', () => {
     const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin, <{itemName: string, count: number}[]>[]);
@@ -28,9 +31,6 @@ describe('Event Generation', () => {
         expect(newEvent.addRunner(genRunner)).to.equal(genRunner);
     })
     it('can get admins, supervisors, and runners', () => {
-        newEvent.addAdmin(secondAdmin);
-        newEvent.addSupervisor(genSupervisor);
-        newEvent.addRunner(genRunner);
         expect(newEvent.adminList()[0]).to.equal(genAdmin);
         expect(newEvent.adminList()[1]).to.equal(secondAdmin);
         expect(newEvent.supervisorList()[0]).to.equal(genSupervisor);
@@ -51,12 +51,54 @@ describe('Participant Removal', () => {
         expect(result[0]).to.equal(true);
         expect(result[1]).to.equal(null);
     })
+    it('can ignore an irrelevant admin', () => {
+        newEvent.addAdmin(secondAdmin);
+        let result = newEvent.removeAdmin(falseAdmin);
+        expect(result[0]).to.equal(false);
+        expect(result[1]).to.equal(null);
+        expect(newEvent.adminList().length).to.equal(2);
+    })
+    it('can remove a supervisor', () => {
+        let result = newEvent.removeSupervisor(genSupervisor);
+        expect(result[0]).to.equal(true);
+        expect(result[1]).to.equal(genSupervisor)
+    })
+    it('can ignore unrelated supervisors', () => {
+        newEvent.addSupervisor(genSupervisor);
+        let result = newEvent.removeSupervisor(falseSupervisor);
+        expect(result[0]).to.equal(true);
+        expect(result[1]).to.equal(null);
+        expect(newEvent.supervisorList().length).to.equal(1);
+    })
+    it('can ignore unrelated runners', () => {
+        let result = newEvent.removeRunner(falseRunner);
+        expect(result[0]).to.equal(false);
+        expect(result[1]).to.equal(null);
+        expect(newEvent.freeRunnerList().length).to.equal(1);
+    })
+    it('can remove runners', () => {
+        let result = newEvent.removeRunner(genRunner);
+        expect(result[0]).to.equal(false);
+        expect(result[1]).to.equal(genRunner);
+    })
 })
-/*describe('Material manipulation', () => {
-    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin);
+describe('Material manipulation', () => {
+    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin, <{itemName: string, count: number}[]>[]);
     newEvent.addSupervisor(genSupervisor);
     newEvent.addRunner(genRunner);
-    it('addition of materials', () => {
-        newEvent.
+    it('can add new materials', () => {
+       expect( newEvent.addFreeMaterials("fun", 10)).to.be.false;
+       expect(newEvent.getMaterialCount("fun")).to.equal(10);
     })
-})*/
+    it('properly adds existing materials', () => {
+        expect(newEvent.addFreeMaterials("fun", 10)).to.be.true;
+        expect(newEvent.getMaterialCount("fun")).to.equal(20);
+    })
+    it('can properly check out materials', () => {
+        let result = newEvent.checkoutMaterials("fun", 10, genSupervisor)
+        expect(result[0]).to.be.true;
+        expect(result[1]).to.equal(10);
+        expect(newEvent.getMaterialCount("fun")).to.equal(10);
+    })
+    
+})
