@@ -371,8 +371,25 @@ export class TaskMastrEvent{
         }
     }
     
-    returnMaterials(name: string, quantity: number, supervisor: supervisor) {
-
+    returnMaterials(name: string, quantity: number, supervisor: upperLevelWorker) : [boolean, number, upperLevelWorker] {
+        if(supervisor.roomName !== this.eventName) return([false, -1, supervisor]);
+        else {
+            let supervisorMats = this.materialsInUse.findIndex((element) => {
+                return(element.itemName === name && element.user === supervisor)
+            })
+            if(supervisorMats === -1) return([false, -1, supervisor]);
+            let takenAmount = this.materialsInUse[supervisorMats].count;
+            if(takenAmount < quantity) return([false, takenAmount, supervisor]);
+            else if(takenAmount === quantity) {
+                this.addFreeMaterials(name, quantity);
+                this.materialsInUse.splice(supervisorMats, 1);
+            }
+            else {
+                this.addFreeMaterials(name, quantity);
+                this.materialsInUse[supervisorMats].count -= quantity;
+            }
+            return([true, quantity, supervisor]);
+        }
     }
     
     /******************************************************************************************************************************************************************

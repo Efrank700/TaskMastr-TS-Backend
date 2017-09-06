@@ -100,5 +100,16 @@ describe('Material manipulation', () => {
         expect(result[1]).to.equal(10);
         expect(newEvent.getMaterialCount("fun")).to.equal(10);
     })
-    
+    it('properly handles not having enough materials', () => {
+        let result = newEvent.checkoutMaterials("fun", 20, genSupervisor);
+        expect(result[0]).to.be.false;
+        expect(result[1]).to.equal(10);
+        expect(newEvent.getMaterialCount("fun")).to.equal(10);
+    })
+    it('properly handles material returns', () => {
+        let result = newEvent.returnMaterials("fun", 10, genSupervisor);
+        expect(result[0]).to.be.true;
+        expect(result[1]).to.equal(10);
+        expect(result[2]).to.equal(genSupervisor);
+    })
 })
