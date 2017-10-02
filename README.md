@@ -21,7 +21,7 @@ This code repository represents the back end of the TaskMastr system. TaskMastr 
 - Handle actual server requests and socket actions
 
 ### Currently floating ideas:
- - Control create views to be sent to front-end client based on the type of user
+ - Control/create views to be sent to front-end client based on the type of user
     - adds significant security and simplifies the action while on only large-screen devices,
     but adds additional complications when it comes to stylizing for something like cordova or react native, where the view and code may have to be adapted for a mobile platform
 
