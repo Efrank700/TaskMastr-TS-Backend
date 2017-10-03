@@ -113,3 +113,44 @@ describe('Material manipulation', () => {
         expect(result[2]).to.equal(genSupervisor);
     })
 })
+
+describe("Task Manipulations", () => {
+    let newEvent = new TaskMastrEvent("hello", 100001, 10000, 101010, genAdmin, []);
+    newEvent.addFreeMaterials("Fun", 25);
+    newEvent.addSupervisor(genSupervisor);
+    let genTask: task = {supervisor: genSupervisor, runnerRequest: false, recieveLocation: "Here", 
+    depositLocation: "there", item: "Fun",quantity: 10};
+    it("Correctly creates a Task", () => {
+        let result = newEvent.addTask(genTask);
+        expect(genSupervisor.tasks[0]).to.equal(genTask);
+        expect(newEvent.$taskCount).to.equal(1);
+        let retList = newEvent.taskList();
+        expect(retList.length).to.equal(1);
+        expect(retList[0].assigned).to.be.null;
+        expect(retList[0].task).to.equal(genTask);
+    })
+
+    it("Assigns task when runner is added", () => {
+        let result = newEvent.addRunner(genRunner);
+        expect(result.task).to.equal(genTask);
+        expect(newEvent.taskList().length).to.equal(1);
+        expect(newEvent.taskList()[0].assigned).to.equal(genRunner);
+        expect(newEvent.taskList()[0].task).to.equal(genTask);
+    })
+
+    it("Behaves properly when task is removed", () => {
+        let removal = newEvent.removeTask(genTask);
+        expect(removal[0]).to.equal(genTask);
+        expect(removal[1]).to.equal(genRunner);
+        expect(newEvent.taskList().length).to.equal(0);
+        expect(genRunner.task).to.be.null;
+        expect(newEvent.freeRunnerList().length).to.equal(1);
+    })
+
+    it("Assigns task when runner present and task added", () => {
+        let result = newEvent.addTask(genTask);
+        expect(result[0]).to.be.true;
+        expect(result[1]).to.equal(genTask);
+        //expect(result[2]).to.equal(genRunner);
+    })
+})

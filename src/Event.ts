@@ -111,10 +111,13 @@ export class TaskMastrEvent{
         return(ret);
     }
 
-    taskList(){
+    taskList(): {assigned: runner | null, task: task}[] {
         const ret = <{assigned: runner | null, task:task}[]>[];
         this.unfinishedTasks.forEach(element => {
             ret.push(element);
+        })
+        this.waitingTasks.forEach(element => {
+            ret.push({assigned: null, task: element.task});
         })
         return(ret);
     }
@@ -150,7 +153,8 @@ export class TaskMastrEvent{
         else {
             if(this.waitingTasks.length !== 0) {
                 runner.task = this.waitingTasks[0].task;
-                this.waitingTasks.splice(0, 1);
+                let removedTask = this.waitingTasks.splice(0, 1);
+                this.unfinishedTasks.push({assigned: runner, task: removedTask[0].task})
                 helper.uniqueInsert(runner, this.taskedRunners);
                 return(runner);
             }
@@ -395,13 +399,20 @@ export class TaskMastrEvent{
     /******************************************************************************************************************************************************************
      * Task Interactions
      *****************************************************************************************************************************************************************/
-         /**
+    private requestValid(itemName: string, quantity: number, supervisor: upperLevelWorker): boolean {
+        let result = this.checkoutMaterials(itemName, quantity, supervisor);
+        return(result[0]);
+    }
+
+     /**
       * @param task 
       * @param runner
-      * @return runner | null 
+      * @return success code, runner | null 
       */
      private assignTask(task : task, runner : runner) : runner | null {
-        const runnerPos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === runner.screenName});
+        const runnerPos = this.freeRunners.findIndex((targetRunner) => {
+                                           return targetRunner.screenName === runner.screenName
+                                        });
         if(runnerPos === -1) return(null);
         else {
             const targetRunner = this.freeRunners[runnerPos];
@@ -428,11 +439,17 @@ export class TaskMastrEvent{
             else return([null, runner]);
         }
         else {
-            this.taskedRunners.splice(runnerIndex, 1);
-            if(runner.roomName === this.eventName) {
-                return([runnerTask, runner]);
+            let removedRunner = this.taskedRunners.splice(runnerIndex, 1);
+            this.freeRunners.push(removedRunner[0]);
+            let taskIndex = this.unfinishedTasks.findIndex((element) => {
+                return element.task === runnerTask
+            });
+            if(taskIndex === -1) return[null, runner];
+            else {
+                this.unfinishedTasks.splice(taskIndex, 1);
+                return[runnerTask, runner];
             }
-            else return([null, runner]);
+
         }
     }
     /**
@@ -442,18 +459,14 @@ export class TaskMastrEvent{
       addTask(task : task) : [boolean, task, runner | null]{
          task.supervisor.tasks.push(task);
         if(this.freeRunners.length > 0) {
-            let res : runner | null = null;
-            let i : number = 0;
-            while(i < this.freeRunners.length && res == null) {
-                res = this.assignTask(task, this.freeRunners[i]);
-                i++;
-            }
+            let res : runner | null = this.assignTask(task, this.freeRunners[0]);
             if(res == null) {
                 this.waitingTasks.push({id: this.taskCount, task: task});
                 this.taskCount++;
                 return([false, task, null]);
             }
             else {
+                this.taskCount++;
                 let runner : runner | null = this.assignTask(task, res);
                 return([true, task, runner]);
             }
