@@ -5,7 +5,7 @@ This code repository represents the back end of the TaskMastr system. TaskMastr 
 
 ## Technologies involved:
 - TaskMastr is powered by Node.js, allowing from easy socket handling and non-blocking I/O, with the ability to later integrate additional asynchrenous features. (With Luck, we might even have to start optimizing with C++)
-- MongoDB is used to store models of the Events for the purposes of long-term material and password information storage
+- PostgreSQL is used to store models of the Events for the purposes of long-term material and password information storage
 - TypeScript is used to enhance developer productivity and provide more thorough protection against errors
 - Testing is executed with the Mocha and Chai libraries
 - Automation with Gulp
@@ -21,7 +21,7 @@ This code repository represents the back end of the TaskMastr system. TaskMastr 
 - Handle actual server requests and socket actions
 
 ### Currently floating ideas:
- - Control create views to be sent to front-end client based on the type of user
+ - Control/create views to be sent to front-end client based on the type of user
     - adds significant security and simplifies the action while on only large-screen devices,
     but adds additional complications when it comes to stylizing for something like cordova or react native, where the view and code may have to be adapted for a mobile platform
 
