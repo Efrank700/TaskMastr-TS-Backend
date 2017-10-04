@@ -151,6 +151,26 @@ describe("Task Manipulations", () => {
         let result = newEvent.addTask(genTask);
         expect(result[0]).to.be.true;
         expect(result[1]).to.equal(genTask);
-        //expect(result[2]).to.equal(genRunner);
+        expect(result[2]).to.equal(genRunner);
+        let listofTasks = newEvent.taskList();
+        expect(listofTasks.length).to.equal(1);
+        expect(listofTasks[0].task).to.equal(genTask);
+    })
+
+    it("Correctly manipulates task on tasked runner removal", () => {
+        let result = newEvent.removeRunner(genRunner);
+        expect(result[0]).to.be.true;
+        expect(result[1]).to.equal(genRunner);
+        let listofTasks = newEvent.taskList();
+        expect(listofTasks.length).to.equal(1);
+        expect(listofTasks[0].assigned).to.be.null;
+    })
+
+    it("Properly removes unassigned task", () => {
+        let result = newEvent.removeTask(genTask);
+        expect(result[0]).to.equal(genTask);
+        expect(result[1]).to.be.null;
+        let listofTasks = newEvent.taskList;
+        expect(listofTasks.length).to.equal(0);
     })
 })

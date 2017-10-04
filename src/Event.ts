@@ -290,8 +290,12 @@ export class TaskMastrEvent{
             let taskedPosition = this.taskedRunners.findIndex((taskedRunner) => {return runner === taskedRunner});
             if(taskedPosition === -1) return([false, null]);
             else {
-                this.unassignTask(this.taskedRunners[taskedPosition]);
-                return([true, this.removeRunner(runner)[1]]);
+                let [remTask, remRun] = this.unassignTask(this.taskedRunners[taskedPosition]);
+                let retVal = this.removeRunner(runner)[1];
+                if(remTask != null) {
+                    this.addTask(remTask)
+                }
+                return([true, retVal]);
             }
         }
         else{
@@ -446,7 +450,7 @@ export class TaskMastrEvent{
             });
             if(taskIndex === -1) return[null, runner];
             else {
-                this.unfinishedTasks.splice(taskIndex, 1);
+                let remTask = this.unfinishedTasks.splice(taskIndex, 1);
                 return[runnerTask, runner];
             }
 
@@ -467,8 +471,8 @@ export class TaskMastrEvent{
             }
             else {
                 this.taskCount++;
-                let runner : runner | null = this.assignTask(task, res);
-                return([true, task, runner]);
+                this.unfinishedTasks.push({assigned: res, task: task});
+                return([true, task, res]);
             }
         }
         else {
