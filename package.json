@@ -5,8 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "npm run build:live",
-    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.ts",
-    "test": "mocha ./dist/tests/test.js"
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.ts"
   },
   "keywords": [],
   "author": "",

@@ -19,7 +19,7 @@ describe('Event Generation', () => {
         expect(newEvent).to.not.equal(null);
     })
     it('can get owner', () => {
-        expect(newEvent.$owner).to.equal(genAdmin);
+        expect(newEvent.$owner).to.equal(genAdmin.screenName);
     })
     it('can add admin', () => {
         expect(newEvent.addAdmin(secondAdmin)).to.equal(secondAdmin);
@@ -43,13 +43,8 @@ describe('Participant Removal', () => {
     newEvent.addAdmin(secondAdmin);
     newEvent.addSupervisor(genSupervisor);
     newEvent.addRunner(genRunner);
-    it('can remove a non-owner admin', () => {
+    it('can remove admin', () => {
         expect(newEvent.removeAdmin(secondAdmin)[1]).to.equal(secondAdmin)
-    })
-    it('can find but not remove owner', () => {
-        let result = newEvent.removeAdmin(genAdmin);
-        expect(result[0]).to.equal(true);
-        expect(result[1]).to.equal(null);
     })
     it('can ignore an irrelevant admin', () => {
         newEvent.addAdmin(secondAdmin);
@@ -172,5 +167,13 @@ describe("Task Manipulations", () => {
         expect(result[1]).to.be.null;
         let listofTasks = newEvent.taskList;
         expect(listofTasks.length).to.equal(0);
+    })
+
+    it("Properly removes event when UpperLevelWorker removed", () => {
+        newEvent.addTask(genTask);
+        newEvent.addRunner(genRunner);
+        newEvent.removeSupervisor(genSupervisor);
+        expect(genRunner.task).to.be.null;
+        expect(newEvent.taskList().length).to.equal(0);
     })
 })

@@ -1,6 +1,8 @@
 const gulp = require('gulp');
 const ts = require('gulp-typescript');
-const tester = require('gulp-shell');
+const mocha = require('gulp-mocha');
+const gutil = require('gulp-util');
+//const tester = require('gulp-shell');
 const JSON_FILES = ['src/*.json', 'src/**/*.json'];
 
 // pull in the project TypeScript config
@@ -12,8 +14,8 @@ gulp.task('scripts', () => {
   return tsResult.js.pipe(gulp.dest('dist'));
 });
 
-gulp.task('watch', ['scripts'], () => {
-  gulp.watch('src/**/*.ts', ['scripts', 'test']);
+gulp.task('watchEvent', ['scripts'], () => {
+  gulp.watch(['src/Event.ts', 'src/Tests/test.ts'], ['scripts', 'mocha_event']);
 });
 
 gulp.task('assets', function() {
@@ -21,12 +23,26 @@ gulp.task('assets', function() {
   .pipe(gulp.dest('dist'));
 });
 
-gulp.task('test', tester.task('npm test'));
+gulp.task('mocha_event', function() {
+  return gulp.src(['./dist/Tests/test.js'], { read: false })
+      .pipe(mocha({ reporter: 'list' }))
+      .on('error', gutil.log);
+});
 
-gulp.task('watchTest', ['test'], () => {
-  gulp.watch('src/test/test.ts')
-})
+gulp.task('mocha_eventManager', ['scripts'], function() {
+  return gulp.src(['./dist/Tests/EventManagerTests.js'], { read: false })
+      .pipe(mocha({ reporter: 'list' }))
+      .on('error', gutil.log);
+});
 
-gulp.task('checkProj', ['watch', 'test']);
+gulp.task('watchEventManager', ['scripts'], () => {
+  gulp.watch(['src/EventManager.ts', 'src/Tests/EventManagerTests.ts'], ['scripts', 'mocha_eventManager']);
+});
+
+gulp.task('checkEvent',['watchEvent', 'mocha_event']);
+
+gulp.task('checkEventManager', ['watchEventManager', 'mocha_eventManager']);
+
+gulp.task('checkProj', ['checkEvent', 'checkEventManager']);
 
 gulp.task('default', ['checkProj', 'assets']);

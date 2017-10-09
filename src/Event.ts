@@ -12,7 +12,7 @@ export class TaskMastrEvent{
     private adminKey: number; //Key for admin to login
     private supervisorKey: number; //Key for supervisor to login
     private runnerKey: number; //Key for runner to login
-    private owner: admin; //Administrator with highest level priviledge
+    private owner: string; //Administrator with highest level priviledge
     private taskCount: number; //Running task count for the event
     private admins: admin[]; //Admins currently active in the event
     private supervisors: supervisor[]; //Supervisors currently active in the event
@@ -48,7 +48,7 @@ export class TaskMastrEvent{
                     this.runnerKey = runnerKey;
                     this.taskCount = 0;
                     this.admins =  <admin[]>[owner];
-                    this.owner = owner;
+                    this.owner = owner.screenName;
                     this.supervisors =  <supervisor[]>[];
                     this.freeRunners =  <runner[]>[];
                     this.taskedRunners =  <runner[]>[];
@@ -78,7 +78,7 @@ export class TaskMastrEvent{
 		return this.runnerKey;
 	}
 
-	 get $owner(): admin {
+	 get $owner(): string {
 		return this.owner;
 	}
 
@@ -238,7 +238,6 @@ export class TaskMastrEvent{
      * @return [boolean, admin| null] boolean indicates that it has been found, admin indicates removal
      */
      removeAdmin(admin : admin) : [boolean, admin | null] {
-        if(this.owner === admin) return([true, null]);
         if(this.admins.length === 0) return([false, null]);
         else {
             const adminIndex: number = this.admins.findIndex((targetAdmin: admin) => {
@@ -399,14 +398,19 @@ export class TaskMastrEvent{
             return([true, quantity, supervisor]);
         }
     }
-    
+
+    requestValid(itemName: string, quantity: number): boolean {
+        let itemIndex = this.materialsAvailable.findIndex((element) => element.itemName === itemName);
+        if(itemIndex === -1) return false;
+        else {
+            return this.materialsAvailable[itemIndex].count >= quantity;
+        }
+
+    }
     /******************************************************************************************************************************************************************
      * Task Interactions
      *****************************************************************************************************************************************************************/
-    private requestValid(itemName: string, quantity: number, supervisor: upperLevelWorker): boolean {
-        let result = this.checkoutMaterials(itemName, quantity, supervisor);
-        return(result[0]);
-    }
+
 
      /**
       * @param task 
@@ -461,6 +465,7 @@ export class TaskMastrEvent{
      * @returns [assigned, task, assignedRunner]
      */
       addTask(task : task) : [boolean, task, runner | null]{
+          
          task.supervisor.tasks.push(task);
         if(this.freeRunners.length > 0) {
             let res : runner | null = this.assignTask(task, this.freeRunners[0]);

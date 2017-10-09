@@ -1,18 +1,25 @@
 "use strict";
 import * as helper from './helperFunctions'
-import {TaskMastrEvent, participant, admin, runner, supervisor, task} from './Event'
+import {TaskMastrEvent, participant, upperLevelWorker, admin, runner, supervisor, task} from './Event'
 
-class EventManager{
-    eventList: TaskMastrEvent[];
+export class EventManager{
+    private eventList: TaskMastrEvent[];
     constructor() {
         this.eventList = <TaskMastrEvent[]>[]
     }
 
+    getEventCount() : number {
+        return(this.eventList.length);
+    }
     private getEventByName(roomName: string) : TaskMastrEvent | null{
         this.eventList.forEach(element => {
             if(element.$eventName === roomName) return(element);
         });
         return(null);
+    }
+
+    getEventList() : TaskMastrEvent[] {
+        return(this.eventList);
     }
 
     /******************************************************************************************************
@@ -79,7 +86,7 @@ class EventManager{
     }
     
     /****************************************************************************************************
-     *************************************USER MANIPULATION**********************************************
+     ***********************************MATERIAL MANIPULATION********************************************
      ***************************************************************************************************/
     
 }
