@@ -22,7 +22,7 @@ describe('Event Generation', () => {
         expect(newEvent.$owner).to.equal(genAdmin.screenName);
     })
     it('can add admin', () => {
-        expect(newEvent.addAdmin(secondAdmin)).to.equal(secondAdmin);
+        expect(newEvent.addAdmin(genAdmin)).to.equal(genAdmin);
     })
     it('can add supervisor', () => {
         expect(newEvent.addSupervisor(genSupervisor)).to.equal(genSupervisor);
@@ -32,7 +32,6 @@ describe('Event Generation', () => {
     })
     it('can get admins, supervisors, and runners', () => {
         expect(newEvent.adminList()[0]).to.equal(genAdmin);
-        expect(newEvent.adminList()[1]).to.equal(secondAdmin);
         expect(newEvent.supervisorList()[0]).to.equal(genSupervisor);
         expect(newEvent.freeRunnerList()[0]).to.equal(genRunner);
     })
@@ -43,26 +42,25 @@ describe('Participant Removal', () => {
     newEvent.addAdmin(secondAdmin);
     newEvent.addSupervisor(genSupervisor);
     newEvent.addRunner(genRunner);
+    newEvent.addAdmin(genAdmin);
     it('can remove admin', () => {
-        expect(newEvent.removeAdmin(secondAdmin)[1]).to.equal(secondAdmin)
+        expect(newEvent.removeAdmin(secondAdmin)).to.equal(secondAdmin)
     })
     it('can ignore an irrelevant admin', () => {
         newEvent.addAdmin(secondAdmin);
         let result = newEvent.removeAdmin(falseAdmin);
-        expect(result[0]).to.equal(false);
-        expect(result[1]).to.equal(null);
+        expect(result).to.equal(null);
         expect(newEvent.adminList().length).to.equal(2);
     })
     it('can remove a supervisor', () => {
         let result = newEvent.removeSupervisor(genSupervisor);
-        expect(result[0]).to.equal(true);
-        expect(result[1]).to.equal(genSupervisor)
+        expect(result).to.equal(genSupervisor);
+        expect(newEvent.supervisorList().length).to.equal(0);
     })
     it('can ignore unrelated supervisors', () => {
         newEvent.addSupervisor(genSupervisor);
         let result = newEvent.removeSupervisor(falseSupervisor);
-        expect(result[0]).to.equal(true);
-        expect(result[1]).to.equal(null);
+        expect(result).to.equal(null);
         expect(newEvent.supervisorList().length).to.equal(1);
     })
     it('can ignore unrelated runners', () => {

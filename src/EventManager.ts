@@ -11,11 +11,11 @@ export class EventManager{
     getEventCount() : number {
         return(this.eventList.length);
     }
+
     private getEventByName(roomName: string) : TaskMastrEvent | null{
-        this.eventList.forEach(element => {
-            if(element.$eventName === roomName) return(element);
-        });
-        return(null);
+        let resAddress = this.eventList.findIndex(element => {return element.$eventName === roomName});
+        if(resAddress === -1) return null;
+        return(this.eventList[resAddress]);
     }
 
     getEventList() : TaskMastrEvent[] {
@@ -46,6 +46,57 @@ export class EventManager{
     }
 
     /****************************************************************************************************
+     ************************************ROOM CHARACTERISTICS********************************************
+     ***************************************************************************************************/
+    adminList(roomName: string) : admin[] | null {
+        let event = this.getEventByName(roomName);
+        if(event === null) return null;
+        else {
+            return(event.adminList());
+        }
+    }
+
+    supervisorList(roomName: string) : supervisor[] | null {
+        let event = this.getEventByName(roomName);
+        if(event === null) return null;
+        else {
+            return(event.supervisorList());
+        }
+    }
+
+    freeRunnerList(roomName: string) : runner[] | null {
+        let event = this.getEventByName(roomName);
+        if(event === null) return null;
+        else {
+            return(event.freeRunnerList());
+        }
+     }
+
+     taskedRunnerList(roomName: string) : runner[] | null {
+        let event = this.getEventByName(roomName);
+        if(event === null) return null;
+        else {
+            return(event.taskedRunnerList());
+        }
+     }
+
+     fullRunnerList(roomName: string) : runner[] | null {
+        let event = this.getEventByName(roomName);
+        if(event === null) return null;
+        else {
+            return(event.freeRunnerList().concat(event.taskedRunnerList()));
+        }
+     }
+
+    getMaterialsAvailable(roomName: string) : {itemName: string, count: number}[] | null {
+        let event = this.getEventByName(roomName);
+        if(event === null) return null;
+        else {
+            return(event.getMaterialList())
+        }
+    }
+     
+    /****************************************************************************************************
      *************************************USER MANIPULATION**********************************************
      ***************************************************************************************************/
     
@@ -67,15 +118,15 @@ export class EventManager{
         return(room.addRunner(target));
     }
 
-    removeAdmin(target: admin): [boolean, admin | null]{
+    removeAdmin(target: admin): admin | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return([false, null]);
+        if(room === null) return(null);
         return(room.removeAdmin(target))
     }
     
-    removeSupervisor(target: supervisor): [boolean, supervisor | null]{
+    removeSupervisor(target: supervisor): supervisor | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return([false, null]);
+        if(room === null) return null;
         return(room.removeSupervisor(target))
     }
     

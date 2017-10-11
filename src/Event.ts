@@ -47,7 +47,7 @@ export class TaskMastrEvent{
                     this.supervisorKey = supervisorKey;
                     this.runnerKey = runnerKey;
                     this.taskCount = 0;
-                    this.admins =  <admin[]>[owner];
+                    this.admins =  <admin[]>[];
                     this.owner = owner.screenName;
                     this.supervisors =  <supervisor[]>[];
                     this.freeRunners =  <runner[]>[];
@@ -109,6 +109,36 @@ export class TaskMastrEvent{
             ret.push(element);
         });
         return(ret);
+    }
+
+    taskedRunnerList() : runner[] {
+        const ret = [] as runner[];
+        this.taskedRunners.forEach(element => {
+            ret.push(element);
+        });
+        return(ret);
+    }
+
+     /**
+     * @returns the list of all available materials
+     */
+    getMaterialList(): {itemName: string, count: number}[]{
+        let retArr: {itemName: string, count: number}[] = [];
+        this.materialsAvailable.forEach(element => {
+            retArr.push(element);
+        });
+        return(retArr);
+    }
+
+    /**
+     * @returns the list of all materials in use
+     */
+    getUsedMaterialList(): {itemName: string, count: number, user: upperLevelWorker}[]{
+        let retArr: {itemName: string, count: number, user: upperLevelWorker}[] = [];
+        this.materialsInUse.forEach(element => {
+            retArr.push(element);
+        });
+        return(retArr);
     }
 
     taskList(): {assigned: runner | null, task: task}[] {
@@ -235,45 +265,44 @@ export class TaskMastrEvent{
     
     /**
      * @param admin administrator to be removed
-     * @return [boolean, admin| null] boolean indicates that it has been found, admin indicates removal
+     * @return admin indicates removal, null for failure
      */
-     removeAdmin(admin : admin) : [boolean, admin | null] {
-        if(this.admins.length === 0) return([false, null]);
+     removeAdmin(admin : admin) : admin | null {
+        if(this.admins.length === 0) return(null);
         else {
             const adminIndex: number = this.admins.findIndex((targetAdmin: admin) => {
                 return(targetAdmin.screenName === admin.screenName);
             });
-            if(adminIndex === -1) return([false, null]);
+            if(adminIndex === -1) return(null);
             else{
                 const retAdmin : admin = this.admins[adminIndex];
                 retAdmin.tasks.forEach(element => {
                     this.removeTask(element);
                 });
                 this.admins.splice(adminIndex, 1);
-                return([true, admin]);
+                return(admin);
             }
         }
     }
     
     /**
      * @param supervisor
-     * @returns [removed, removedSupervisor] removed indicates code success, removedSupervisor indicates
-     * the actual removed object
+     * @returns supervisor is removed supervisor, null for failure
      */
-     removeSupervisor(supervisor : supervisor) : [boolean, supervisor | null] {
-        if(this.supervisors.length === 0) return([false, null]);
+     removeSupervisor(supervisor : supervisor) : supervisor | null {
+        if(this.supervisors.length === 0) return(null);
         else {
             let supervisorIndex = this.supervisors.findIndex((targetSupervisor : supervisor) => {
                 return targetSupervisor === supervisor;
             });
-            if(supervisorIndex === -1) return([true, null]);
+            if(supervisorIndex === -1) return(null);
             else {
                 let retSupervisor : supervisor = this.supervisors[supervisorIndex];
                 retSupervisor.tasks.forEach(element => {
                     this.removeTask(element);
                 });
                 this.supervisors.splice(supervisorIndex, 1);
-                return([true, retSupervisor]);
+                return(retSupervisor);
             }
         }
     }
@@ -315,17 +344,6 @@ export class TaskMastrEvent{
         let position = this.materialsAvailable.findIndex((element) => {return element.itemName === name});
         if(position === -1) return 0;
         return(this.materialsAvailable[position].count);
-    }
-
-    /**
-     * @returns the list of all available materials
-     */
-    getMaterialList(): {itemName: string, count: number}[]{
-        let retArr: {itemName: string, count: number}[] = [];
-        this.materialsAvailable.forEach(element => {
-            retArr.push(element);
-        });
-        return(retArr);
     }
 
     addFreeMaterials(name: string, quantity: number): boolean{

@@ -23,7 +23,7 @@ gulp.task('assets', function() {
   .pipe(gulp.dest('dist'));
 });
 
-gulp.task('mocha_event', function() {
+gulp.task('mocha_event', ['scripts'], function() {
   return gulp.src(['./dist/Tests/test.js'], { read: false })
       .pipe(mocha({ reporter: 'list' }))
       .on('error', gutil.log);
