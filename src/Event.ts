@@ -22,7 +22,8 @@ export class TaskMastrEvent{
     private materialsInUse: {itemName: string, count: number, user: upperLevelWorker}[]; //Name, count, and using supervisor
     private unfinishedTasks: {assigned: runner | null, task: task}[];
     private waitingTasks: {id: number, task: task}[]; //Tasks currently waiting to be assigned.
-    
+    private SUPERADMIN: admin = {screenName: this.eventName, roomName: this.eventName, tasks: [], 
+                                 location: "HOME BASE", socketId: 0};
     /**
      * @constructor
      * @param eventName 
@@ -47,17 +48,22 @@ export class TaskMastrEvent{
                     this.supervisorKey = supervisorKey;
                     this.runnerKey = runnerKey;
                     this.taskCount = 0;
-                    this.admins =  <admin[]>[];
+                    this.admins =  <admin[]>[this.SUPERADMIN];
                     this.owner = owner.screenName;
                     this.supervisors =  <supervisor[]>[];
                     this.freeRunners =  <runner[]>[];
                     this.taskedRunners =  <runner[]>[];
                     this.materialsAvailable =  <{itemName: string, count: number}[]>[];
-                    this.materialsInUse =  <{itemName: string, count: number, user: upperLevelWorker}[]>[];
+                    this.materialsInUse =  <{itemName: string, count: number, user: 
+                                            upperLevelWorker}[]>[];
                     this.unfinishedTasks = <{assigned: runner | null, task:task}[]>[];
                     this.waitingTasks =  <{id: number, task: task}[]>[];
                 }
     
+     get $uniAdmin() : admin {
+         return this.SUPERADMIN;
+     }
+
 	 get $eventName(): string {
 		return this.eventName;
 	}
@@ -90,7 +96,7 @@ export class TaskMastrEvent{
         let ret = <admin[]>[];
         this.admins.forEach((element) => {
             
-            ret.push(element);
+            if(element !== this.SUPERADMIN) ret.push(element);
         });
         return(ret);
     }
@@ -200,7 +206,9 @@ export class TaskMastrEvent{
      * @returns admin target Admin 
      */
      getAdminByScreenName(screenName: string) : admin | null{
-        const found: number = (this.admins.findIndex((targetAdmin) => {return(targetAdmin.screenName === screenName)}));
+        const found: number = (this.admins.findIndex((targetAdmin) => {
+                                    return(targetAdmin.screenName === screenName)
+                                }));
         if(found === -1) return(null);
         else return(this.admins[found]);
     }
@@ -210,7 +218,9 @@ export class TaskMastrEvent{
      * @returns supervisor target supervisor 
      */
      getSupervisorByScreenName(screenName: string) : supervisor | null{
-        const found: number = (this.supervisors.findIndex((targetSup) => {return(targetSup.screenName === screenName)}));
+        const found: number = (this.supervisors.findIndex((targetSup) => {
+                                    return(targetSup.screenName === screenName)
+                              }));
         if (found === -1) return(null);
         else return(this.supervisors[found]);
     }
@@ -220,10 +230,14 @@ export class TaskMastrEvent{
      *@return runner target runner 
      */
       getRunnerByScreenName(screenName: string) : runner | null{
-       const freePos = this.freeRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
+       const freePos = this.freeRunners.findIndex((targetRunner) => {
+                            return targetRunner.screenName === screenName
+                        });
        if(freePos !== -1) return(this.freeRunners[freePos]);
        else{
-           const taskedPos = this.taskedRunners.findIndex((targetRunner) => {return targetRunner.screenName === screenName});
+           const taskedPos = this.taskedRunners.findIndex((targetRunner) => {
+                                return targetRunner.screenName === screenName
+                            });
            if(taskedPos !== -1) return(this.taskedRunners[taskedPos]);
            else return(null);
        }
@@ -347,6 +361,7 @@ export class TaskMastrEvent{
     }
 
     addFreeMaterials(name: string, quantity: number): boolean{
+        if(quantity <= 0) return false;
         let position = this.materialsAvailable.findIndex((element) => {
             return element.itemName === name
         });
@@ -359,6 +374,7 @@ export class TaskMastrEvent{
     }
 
     removeFreeMaterials(name: string, quantity: number): number{
+        if(quantity <= 0) return(-1)
         let position = this.materialsAvailable.findIndex((element) => {
             return(element.itemName === name);
         });
@@ -375,6 +391,7 @@ export class TaskMastrEvent{
     }
 
     checkoutMaterials(name: string, quantity: number, caller: upperLevelWorker): [boolean, number]{
+        if(quantity <= 0) return([false, -1]);
         let position = this.materialsAvailable.findIndex((element) => {return element.itemName === name});
         if(position === -1) return([false, 0]);
         if(this.materialsAvailable[position].count < quantity) {
@@ -397,6 +414,7 @@ export class TaskMastrEvent{
     }
     
     returnMaterials(name: string, quantity: number, supervisor: upperLevelWorker) : [boolean, number, upperLevelWorker] {
+        if(quantity <= 0) return([false, -1, supervisor])
         if(supervisor.roomName !== this.eventName) return([false, -1, supervisor]);
         else {
             let supervisorMats = this.materialsInUse.findIndex((element) => {
@@ -418,6 +436,7 @@ export class TaskMastrEvent{
     }
 
     requestValid(itemName: string, quantity: number): boolean {
+        if(quantity < 0) return false;
         let itemIndex = this.materialsAvailable.findIndex((element) => element.itemName === itemName);
         if(itemIndex === -1) return false;
         else {

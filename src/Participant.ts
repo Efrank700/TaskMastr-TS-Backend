@@ -18,8 +18,8 @@ export interface upperLevelWorker extends participant{
 export interface admin extends upperLevelWorker{
     screenName: string,
     roomName: string,
-    tasks: task[],
     location: string | null,
+    tasks: task[],
     socketId: number
 }
 

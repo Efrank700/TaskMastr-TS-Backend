@@ -4,6 +4,6 @@ export interface task {
     runnerRequest: boolean,
     recieveLocation: string,
     depositLocation:string,
-    item?: string,
-    quantity?: number
+    item?: string | string[]
+    quantity?: number | number[]
 }

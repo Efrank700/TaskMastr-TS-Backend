@@ -13,6 +13,8 @@ let genEvent2: TaskMastrEvent = new TaskMastrEvent("ev2", 10003, 10004, 10005, g
 let badAdmin: admin = {screenName: "admin1", roomName: "", socketId: 1, tasks: [], location: null};
 let badSupervisor: supervisor = {screenName: "supervisor1", roomName: "ev3", socketId: 2, tasks: [], location: "home"};
 let badRunner: runner = {screenName: "runner3", roomName: "not real", socketId: 10, task: null};
+
+// SIMPLE CASE TESTS
 describe('EventManager Event Manipulation', () => {
     let newManager = new EventManager();
     it('Creates EventManager Length 0', () => {
@@ -86,14 +88,15 @@ describe("EventManager User Manipulations", () => {
 
     it("Properly removes admin", () => {
         let res = newManager.removeAdmin(genAdmin1);
-        expect(res).to.equal(genAdmin1);
+        expect(res[0]).to.equal(genAdmin1);
         expect(genEvent1.adminList().length).to.equal(0);
         expect(genEvent2.adminList().length).to.equal(1);
     })
 
     it("Ignores remove on irrelevant admin", () => {
         let res = newManager.removeAdmin(badAdmin);
-        expect(res).to.be.null;
+        expect(res[0]).to.be.null;
+        expect(res[1]).to.be.null;
         expect(genEvent2.adminList().length).to.equal(1);
     })
 
@@ -121,14 +124,15 @@ describe("EventManager User Manipulations", () => {
 
     it("Properly removes supervisor", () => {
         let res = newManager.removeSupervisor(genSupervisor1);
-        expect(res).to.equal(genSupervisor1);
+        expect(res[0]).to.equal(genSupervisor1);
         expect(genEvent1.supervisorList().length).to.equal(0);
         expect(genEvent2.supervisorList().length).to.equal(1);
     })
 
     it("Ignores remove on irrelevant supervisor", () => {
         let res = newManager.removeSupervisor(badSupervisor);
-        expect(res).to.be.null;
+        expect(res[0]).to.be.null;
+        expect(res[1]).to.be.null;
         expect(genEvent2.supervisorList().length).to.equal(1);
     })
 
