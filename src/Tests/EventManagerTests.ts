@@ -14,6 +14,7 @@ let badAdmin: admin = {screenName: "admin1", roomName: "", socketId: 1, tasks: [
 let badSupervisor: supervisor = {screenName: "supervisor1", roomName: "ev3", socketId: 2, tasks: [], location: "home"};
 let badRunner: runner = {screenName: "runner3", roomName: "not real", socketId: 10, task: null};
 
+
 // SIMPLE CASE TESTS
 describe('EventManager Event Manipulation', () => {
     let newManager = new EventManager();
@@ -88,15 +89,17 @@ describe("EventManager User Manipulations", () => {
 
     it("Properly removes admin", () => {
         let res = newManager.removeAdmin(genAdmin1);
-        expect(res[0]).to.equal(genAdmin1);
-        expect(genEvent1.adminList().length).to.equal(0);
-        expect(genEvent2.adminList().length).to.equal(1);
+        if(res === null) expect(false).to.be.true;
+         else{
+            expect(res[0]).to.equal(genAdmin1);
+            expect(genEvent1.adminList().length).to.equal(0);
+            expect(genEvent2.adminList().length).to.equal(1);
+         }
     })
 
     it("Ignores remove on irrelevant admin", () => {
         let res = newManager.removeAdmin(badAdmin);
-        expect(res[0]).to.be.null;
-        expect(res[1]).to.be.null;
+        expect(res).to.be.null; 
         expect(genEvent2.adminList().length).to.equal(1);
     })
 
@@ -124,15 +127,17 @@ describe("EventManager User Manipulations", () => {
 
     it("Properly removes supervisor", () => {
         let res = newManager.removeSupervisor(genSupervisor1);
-        expect(res[0]).to.equal(genSupervisor1);
-        expect(genEvent1.supervisorList().length).to.equal(0);
-        expect(genEvent2.supervisorList().length).to.equal(1);
+        if(res === null) expect(false).to.be.true; 
+        else{
+            expect(res[0]).to.equal(genSupervisor1);
+            expect(genEvent1.supervisorList().length).to.equal(0);
+            expect(genEvent2.supervisorList().length).to.equal(1);
+        }
     })
 
     it("Ignores remove on irrelevant supervisor", () => {
         let res = newManager.removeSupervisor(badSupervisor);
-        expect(res[0]).to.be.null;
-        expect(res[1]).to.be.null;
+        expect(res).to.be.null;
         expect(genEvent2.supervisorList().length).to.equal(1);
     })
 
@@ -160,16 +165,91 @@ describe("EventManager User Manipulations", () => {
 
     it("Properly removes runner", () => {
         let res = newManager.removeRunner(genRunner1);
-        expect(res[0]).to.be.false;
-        expect(res[1]).to.equal(genRunner1);
-        expect(genEvent1.freeRunnerList().length).to.equal(0);
-        expect(genEvent2.freeRunnerList().length).to.equal(1);
+        if(res === null) expect(false).to.be.true; 
+        else{
+            expect(res[0]).to.be.false;
+            expect(res[1]).to.equal(genRunner1);
+            expect(genEvent1.freeRunnerList().length).to.equal(0);
+            expect(genEvent2.freeRunnerList().length).to.equal(1);
+        }
     })
 
     it("Ignores remove on irrelevant runner", () => {
         let res = newManager.removeRunner(badRunner);
-        expect(res[0]).to.be.false;
-        expect(res[1]).to.be.null;
+        expect(res).to.be.null;
         expect(genEvent2.freeRunnerList().length).to.equal(1);
+    })
+})
+
+
+describe("EventManager Materials and Tasks", () => {
+    let newManager = new EventManager();
+    newManager.addEvent(genEvent1);
+    newManager.addEvent(genEvent2);
+    newManager.removeSupervisor(genSupervisor1);
+    newManager.removeSupervisor(genSupervisor2);
+    newManager.removeRunner(genRunner1);
+    newManager.removeRunner(genRunner2);
+    it("Properly adds materials to rooms when valid", () => {
+        let res = newManager.addMaterials("ev1", "pencils", 10);
+        expect(res).to.be.false;
+        expect(genEvent1.getMaterialCount("pencils")).to.equal(10);
+        expect(genEvent2.getMaterialCount("pencils")).to.equal(0);
+        expect(newManager.addMaterials("ev1", "pencils", 10)).to.be.true;
+    })
+
+    it("Ignores invalid rooms or amounts", () => {
+        let res = newManager.addMaterials("ev5", "pens", 1);
+        expect(res).to.be.null;
+        let res1 = newManager.addMaterials("ev1", "pens", -1);
+        expect(res1).to.be.null;
+    })
+
+    it("Properly generates task on material request", () => {
+        newManager.addAdmin(genAdmin1);
+        newManager.addAdmin(genAdmin2);
+        let res = newManager.requestMaterial(genAdmin1, "pencils", 5);
+        if(res === null) expect(0).to.equal(1);
+        else {
+            let task = res[1];
+            let runner = res[2];
+            expect(res[0]).to.be.false;
+            if(task === null) expect(0).to.equal(1);
+            else {
+                expect(task.item).to.equal("pencils");
+                expect(task.quantity).to.equal(5);
+                expect(task.runnerRequest).to.be.false;
+                expect(task.recieveLocation).to.equal('HOME BASE');
+                expect(task.supervisor).to.equal(genAdmin1);
+                expect(task.depositLocation).to.equal(`UNKNOWN: LOCATION OF ${genAdmin1.screenName} -- CONTACT ADMINISTRATOR`);
+            }
+            expect(genEvent1.taskList()[0].assigned).to.be.null;
+            expect(genEvent1.taskList()[0].task).to.equal(task);
+            expect(runner).to.be.null;
+        }
+    })
+
+    it("Properly generates task on runner request", () => {
+        newManager.removeRunner(genRunner1);
+        newManager.removeRunner(genRunner2);
+        let res = newManager.requestRunner(genAdmin2);
+        if(res === null) expect(1).to.equal(0);
+        else {
+            let task = res[1];
+            let runner = res[2];
+            expect(res[0]).to.be.false;
+            if(task === null) expect(0).to.equal(1);
+            else {
+                expect(task.item).to.be.undefined;
+                expect(task.quantity).to.be.undefined;
+                expect(task.runnerRequest).to.be.true;
+                expect(task.recieveLocation).to.equal('YOUR LOCATION');
+                expect(task.supervisor).to.equal(genAdmin2);
+                expect(task.depositLocation).to.equal(`UNKNOWN: LOCATION OF ${genAdmin2.screenName} -- CONTACT ADMINISTRATOR`);
+            }
+            expect(genEvent2.taskList()[0].assigned).to.be.null;
+            expect(genEvent2.taskList()[0].task).to.equal(task);
+            expect(runner).to.be.null;
+        }
     })
 })

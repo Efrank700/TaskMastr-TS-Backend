@@ -5,8 +5,8 @@
 
 "use strict";
 import * as helper from "./helperFunctions"
-import {participant, admin, runner, upperLevelWorker, supervisor, task} from "./Participant"
-export {participant, admin, runner, upperLevelWorker, supervisor, task}
+import {participant, admin, runner, supervisor, task} from "./Participant"
+export {participant, admin, runner, supervisor, task}
 export class TaskMastrEvent{
     private eventName: string; //Event Name in string form, also room name for socket
     private adminKey: number; //Key for admin to login
@@ -19,7 +19,7 @@ export class TaskMastrEvent{
     private freeRunners: runner[]; //Runners currently active and free of task
     private taskedRunners: runner[]; //Runners currently active and tasked
     private materialsAvailable: {itemName: string, count: number}[]; //Name and count of free materials
-    private materialsInUse: {itemName: string, count: number, user: upperLevelWorker}[]; //Name, count, and using supervisor
+    private materialsInUse: {itemName: string, count: number, user: admin | supervisor}[]; //Name, count, and using supervisor
     private unfinishedTasks: {assigned: runner | null, task: task}[];
     private waitingTasks: {id: number, task: task}[]; //Tasks currently waiting to be assigned.
     private SUPERADMIN: admin = {screenName: this.eventName, roomName: this.eventName, tasks: [], 
@@ -55,7 +55,7 @@ export class TaskMastrEvent{
                     this.taskedRunners =  <runner[]>[];
                     this.materialsAvailable =  <{itemName: string, count: number}[]>[];
                     this.materialsInUse =  <{itemName: string, count: number, user: 
-                                            upperLevelWorker}[]>[];
+                                            admin | supervisor}[]>[];
                     this.unfinishedTasks = <{assigned: runner | null, task:task}[]>[];
                     this.waitingTasks =  <{id: number, task: task}[]>[];
                 }
@@ -139,8 +139,8 @@ export class TaskMastrEvent{
     /**
      * @returns the list of all materials in use
      */
-    getUsedMaterialList(): {itemName: string, count: number, user: upperLevelWorker}[]{
-        let retArr: {itemName: string, count: number, user: upperLevelWorker}[] = [];
+    getUsedMaterialList(): {itemName: string, count: number, user: admin | supervisor}[]{
+        let retArr: {itemName: string, count: number, user: admin | supervisor}[] = [];
         this.materialsInUse.forEach(element => {
             retArr.push(element);
         });
@@ -380,9 +380,7 @@ export class TaskMastrEvent{
         });
         if(position === -1) return 0;
         else if(this.materialsAvailable[position].count <= quantity) {
-            let removed = this.materialsAvailable[position].count;
-            this.materialsAvailable[position].count = 0;
-            return(removed);
+            return(0);
         }
         else {
             this.materialsAvailable[position].count -= quantity;
@@ -390,7 +388,7 @@ export class TaskMastrEvent{
         }
     }
 
-    checkoutMaterials(name: string, quantity: number, caller: upperLevelWorker): [boolean, number]{
+    checkoutMaterials(name: string, quantity: number, caller: admin | supervisor): [boolean, number]{
         if(quantity <= 0) return([false, -1]);
         let position = this.materialsAvailable.findIndex((element) => {return element.itemName === name});
         if(position === -1) return([false, 0]);
@@ -413,7 +411,7 @@ export class TaskMastrEvent{
         }
     }
     
-    returnMaterials(name: string, quantity: number, supervisor: upperLevelWorker) : [boolean, number, upperLevelWorker] {
+    returnMaterials(name: string, quantity: number, supervisor: admin | supervisor) : [boolean, number, admin | supervisor] {
         if(quantity <= 0) return([false, -1, supervisor])
         if(supervisor.roomName !== this.eventName) return([false, -1, supervisor]);
         else {

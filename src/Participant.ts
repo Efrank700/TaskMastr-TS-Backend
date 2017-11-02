@@ -9,13 +9,8 @@ export interface participant {
 enum participantTypes {
     admin, supervisor, runner
 }
-export interface upperLevelWorker extends participant{
-    screenName: string,
-    roomName: string,
-    tasks: task[],
-    socketId: number
-}
-export interface admin extends upperLevelWorker{
+
+export interface admin{
     screenName: string,
     roomName: string,
     location: string | null,
@@ -23,7 +18,7 @@ export interface admin extends upperLevelWorker{
     socketId: number
 }
 
-export interface supervisor extends upperLevelWorker{
+export interface supervisor{
     screenName: string,
     roomName: string,
     location: string,

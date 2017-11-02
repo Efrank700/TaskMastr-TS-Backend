@@ -1,6 +1,6 @@
-import {upperLevelWorker} from "./Participant"
+import {admin, supervisor} from "./Participant"
 export interface task {
-    supervisor: upperLevelWorker,
+    supervisor: admin | supervisor,
     runnerRequest: boolean,
     recieveLocation: string,
     depositLocation:string,
