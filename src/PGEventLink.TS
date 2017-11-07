@@ -19,7 +19,7 @@ async function addNewEvent(eventName: string, adminKey: number, supervisorKey: n
     }
     catch(error) {
         return new Promise<string[]>((resolve, reject) => {
-            reject(["" + error]);
+            reject(error);
         })
     }
 }
@@ -33,6 +33,12 @@ async function eventExistsByName(eventName: string) : Promise<boolean> {
         })
     }
     catch(error) {
-        
+        return new Promise<boolean>((resolve, reject) => {
+            reject(error);
+        })
     }
+}
+
+async function getEventByCode(key: Number) : Promise<string> {
+    
 }

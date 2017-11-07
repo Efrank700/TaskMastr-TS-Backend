@@ -40,6 +40,8 @@
     "express": "^4.15.3",
     "helmet": "^3.8.1",
     "pg": "^7.3.0",
-    "socket.io": "^2.0.3"
+    "reflect-metadata": "^0.1.10",
+    "socket.io": "^2.0.3",
+    "typeorm": "^0.1.2"
   }
 }
