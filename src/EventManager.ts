@@ -1,11 +1,11 @@
 "use strict";
-import * as helper from './helperFunctions'
-import {TaskMastrEvent, participant, admin, runner, supervisor, task} from './Event'
+import * as helper from "./helperFunctions";
+import {TaskMastrEvent, admin, runner, supervisor, task} from "./Event";
 
 export class EventManager{
     private eventList: TaskMastrEvent[];
     constructor() {
-        this.eventList = <TaskMastrEvent[]>[]
+        this.eventList = <TaskMastrEvent[]>[];
     }
 
     getEventCount() : number {
@@ -14,7 +14,7 @@ export class EventManager{
 
     private getEventByName(roomName: string) : TaskMastrEvent | null{
         let resAddress = this.eventList.findIndex(element => {
-            return element.$eventName === roomName
+            return element.$eventName === roomName;
         });
         if(resAddress === -1) return null;
         return(this.eventList[resAddress]);
@@ -48,8 +48,11 @@ export class EventManager{
     }
 
     isEmpty(targetEvent: TaskMastrEvent) : boolean {
-        return(targetEvent.adminList().length + targetEvent.supervisorList().length + 
-               targetEvent.freeRunnerList().length + targetEvent.taskedRunnerList().length === 1)
+        return(targetEvent.adminList().length +
+            targetEvent.supervisorList().length +
+            targetEvent.freeRunnerList().length +
+            targetEvent.taskedRunnerList().length ===
+            1);
     }
 
     /****************************************************************************************************
@@ -57,7 +60,7 @@ export class EventManager{
      ***************************************************************************************************/
     adminList(roomName: string) : admin[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if (event === null || event === undefined) return null;
         else {
             return(event.adminList());
         }
@@ -65,7 +68,7 @@ export class EventManager{
 
     supervisorList(roomName: string) : supervisor[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if(event === null || event === undefined) return null;
         else {
             return(event.supervisorList());
         }
@@ -73,7 +76,7 @@ export class EventManager{
 
     freeRunnerList(roomName: string) : runner[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if (event === null || event === undefined) return null;
         else {
             return(event.freeRunnerList());
         }
@@ -81,7 +84,7 @@ export class EventManager{
 
      taskedRunnerList(roomName: string) : runner[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if (event === null || event === undefined) return null;
         else {
             return(event.taskedRunnerList());
         }
@@ -89,7 +92,7 @@ export class EventManager{
 
      fullRunnerList(roomName: string) : runner[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if (event === null || event === undefined) return null;
         else {
             return(event.freeRunnerList().concat(event.taskedRunnerList()));
         }
@@ -97,16 +100,16 @@ export class EventManager{
 
     getMaterialsAvailable(roomName: string) : {itemName: string, count: number}[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if (event === null || event === undefined) return null;
         else {
-            return(event.getMaterialList())
+            return(event.getMaterialList());
         }
     }
 
     getFreeMaterials(roomName: string) : {itemName: string, count: number, user: 
         admin | supervisor}[] | null {
         let event = this.getEventByName(roomName);
-        if(event === null) return null;
+        if (event === null || event === undefined) return null;
         else {
             return(event.getUsedMaterialList());
         }
@@ -118,90 +121,93 @@ export class EventManager{
     
      addAdmin(target: admin) : admin | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return(null);
+        if(room === null || room === undefined) return(null);
         return(room.addAdmin(target));
     }
 
     addSupervisor(target: supervisor) : supervisor | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return(null);
+        if (room === null || room === undefined) return(null);
         return(room.addSupervisor(target));
     }
 
     addRunner(target: runner) : runner | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return(null);
+        if (room === null || room === undefined) return(null);
         return(room.addRunner(target));
     }
 
     removeAdmin(target: admin): [admin | null, runner | null] | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return(null);
+        if (room === null || room === undefined) return(null);
         let fullMatList = room.getUsedMaterialList();
         let targetMatList = <{itemName: string, count: number, user: admin | supervisor}[]>[];
         fullMatList.forEach(element => {
-            if(element.user === target) targetMatList.push(element);
-        })
+            if (element.user === target) targetMatList.push(element);
+        });
         let retItemNames: string[] = [];
         let retItemQuants: number[] = [];
         targetMatList.forEach(element => {
             let itemIndex = retItemNames.findIndex(stringElement => {
-                return element.itemName === stringElement
-            })
-            if(itemIndex === -1) {
+                return element.itemName === stringElement;
+            });
+            if (itemIndex === -1) {
                 retItemNames.push(element.itemName);
                 retItemQuants.push(element.count);
-            }
-            else retItemQuants[itemIndex] += element.count;
-        })
+            } else retItemQuants[itemIndex] += element.count;
+        });
         let depLoc: string;
-        if(target.location === null) depLoc = `UNKNOWN: LOCATION OF ${target.screenName} -- 
-        CONTACT ADMINISTRATOR`
+        if (target.location === null) {
+            depLoc = `UNKNOWN: LOCATION OF ${target.screenName} -- CONTACT ADMINISTRATOR`;
+        }
         else depLoc = target.location;
         let retTask: task = {supervisor: room.$uniAdmin, runnerRequest: false, 
                              recieveLocation: depLoc, depositLocation: "HOME BASE", 
                              item: retItemNames, quantity: retItemQuants};
-        if(retItemNames.length > 0) return([room.removeAdmin(target), room.addTask(retTask)[2]])
+        if (retItemNames.length > 0) return([room.removeAdmin(target), room.addTask(retTask)[2]]);
         return([room.removeAdmin(target), null]);
     }
     
     removeSupervisor(target: supervisor): [supervisor | null, runner | null] | null{
         let room = this.getEventByName(target.roomName);
-        if(room === null) return(null);
+        if (room === null || room === undefined) return(null);
         let fullMatList = room.getUsedMaterialList();
         let targetMatList = <{itemName: string, count: number, user: admin | supervisor}[]>[];
         fullMatList.forEach(element => {
-            if(element.user === target) targetMatList.push(element);
-        })
+            if (element.user === target) targetMatList.push(element);
+        });
         let retItemNames: string[] = [];
         let retItemQuants: number[] = [];
         targetMatList.forEach(element => {
-            let itemIndex = retItemNames.findIndex(stringElement => {
-                return element.itemName === stringElement
-            })
-            if(itemIndex === -1) {
+            const itemIndex = retItemNames.findIndex(stringElement => {
+                return element.itemName === stringElement;
+            });
+            if (itemIndex === -1) {
                 retItemNames.push(element.itemName);
                 retItemQuants.push(element.count);
-            }
-            else retItemQuants[itemIndex] += element.count;
-        })
+            } else retItemQuants[itemIndex] += element.count;
+        });
         let depLoc: string;
-        if(target.location === null) depLoc = `UNKNOWN: LOCATION OF ${target.screenName} -- 
-        CONTACT ADMINISTRATOR`
+        if (target.location === null) {
+            depLoc = `UNKNOWN: LOCATION OF ${target.screenName} -- CONTACT ADMINISTRATOR`;
+        }
         else depLoc = target.location;
-        let retTask: task = {supervisor: room.$uniAdmin, runnerRequest: false, 
+        const retTask: task = {supervisor: room.$uniAdmin, runnerRequest: false, 
                              recieveLocation: depLoc, depositLocation: "HOME BASE", 
                              item: retItemNames, quantity: retItemQuants};
-        if(retItemNames.length > 0) return([room.removeSupervisor(target), 
-                                            room.addTask(retTask)[2]])
+        if (retItemNames.length > 0)
+            return([
+                room.removeSupervisor(target),
+                room.addTask(retTask)[2]
+            ]);
         return([room.removeSupervisor(target), null]);
     }
     
     removeRunner(target: runner): [boolean, runner | null, task | null] | null{
-        let room = this.getEventByName(target.roomName);
-        if(room === null) return(null);
-        let task = target.task;
-        let res = room.removeRunner(target);
+        const room = this.getEventByName(target.roomName);
+        if (room === null || room === undefined) return(null);
+        const task = target.task;
+        const res = room.removeRunner(target);
         return([res[0], res[1], task]);
     }
     
@@ -221,7 +227,7 @@ export class EventManager{
         if(room == null) return(null);
         if(quantity <= 0) return(null);
         if(!room.requestValid(materialName, quantity)) return false;
-        return(room.removeFreeMaterials(materialName, quantity) > 0)
+         return(room.removeFreeMaterials(materialName, quantity) > 0);
      }
 
      requestRunner(requester: admin | supervisor) :
@@ -232,7 +238,7 @@ export class EventManager{
         `UNKNOWN: LOCATION OF ${requester.screenName} -- CONTACT ADMINISTRATOR`;
         let reqTask : task = {supervisor: requester, runnerRequest: true, recieveLocation: "YOUR LOCATION", depositLocation: depLocation};
         let res = room.addTask(reqTask);
-        return([res[0], res[1], res[2]])
+         return([res[0], res[1], res[2]]);
      }
 
      requestMaterial(requester: admin | supervisor, material: string, quantity: number) : [boolean, task | null, runner | null] | null{
@@ -246,7 +252,7 @@ export class EventManager{
         `UNKNOWN: LOCATION OF ${requester.screenName} -- CONTACT ADMINISTRATOR`;
         let reqTask : task = {supervisor: requester, runnerRequest: false, recieveLocation: "HOME BASE", depositLocation: depLocation, item: material, quantity: quantity};
         let res = room.addTask(reqTask);
-        return([res[0], res[1], res[2]])
+         return([res[0], res[1], res[2]]);
      }
 
      taskComplete(runner: runner): [task | null, runner | null] | null{

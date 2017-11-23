@@ -6,7 +6,7 @@ export interface participant {
     socketId: number
 }
 
-enum participantTypes {
+export enum participantTypes {
     admin, supervisor, runner
 }
 

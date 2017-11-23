@@ -9,10 +9,10 @@ import {participant, admin, runner, supervisor, task} from "./Participant"
 export {participant, admin, runner, supervisor, task}
 export class TaskMastrEvent{
     private eventName: string; //Event Name in string form, also room name for socket
-    private adminKey: number; //Key for admin to login
-    private supervisorKey: number; //Key for supervisor to login
-    private runnerKey: number; //Key for runner to login
-    private owner: string; //Administrator with highest level priviledge
+    private readonly adminKey: number; //Key for admin to login
+    private readonly supervisorKey: number; //Key for supervisor to login
+    private readonly runnerKey: number; //Key for runner to login
+    private readonly owner: string; //Administrator with highest level priviledge
     private taskCount: number; //Running task count for the event
     private admins: admin[]; //Admins currently active in the event
     private supervisors: supervisor[]; //Supervisors currently active in the event

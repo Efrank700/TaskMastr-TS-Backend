@@ -46,7 +46,7 @@ gulp.task('watchEventManager', ['scripts'], () => {
 });
 
 gulp.task('watchPGEvent', ['scripts'], () => {
-  gulp.watch(['src/PGEventLink.ts', 'src/db/*.ts', 'src/Tests/PGEventLinkTests.ts'], ['scripts', 'mocha_PGEvent']);
+  gulp.watch(['src/DBDriver/*.ts'], ['scripts', 'mocha_PGEvent']);
 });
 
 gulp.task('checkEvent',['watchEvent', 'mocha_event']);
