@@ -36,9 +36,10 @@ export class DBEvent{
     @JoinColumn()
     runnerKey: number;
 
-    @OneToOne(type => User, User => User.userID)
-    @JoinColumn()
-    ownerKey: number;
+    @Column({
+        type: "varchar"
+    })
+    ownerName: string;
 
     @OneToMany(type => eventMaterial, mat=>mat.eventId)
     materials: eventMaterial[];

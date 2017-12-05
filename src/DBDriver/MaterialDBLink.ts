@@ -12,11 +12,6 @@ export class eventMaterial{
     @Column({
         type: "varchar"
     })
-    eventName: string;
-
-    @Column({
-        type: "varchar"
-    })
     materialName: string;
 
     @Column({
