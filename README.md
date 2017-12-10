@@ -15,8 +15,10 @@ This code repository represents the back end of the TaskMastr system. TaskMastr 
 - The creation of participant, task, and material models
 - A rough prototype of Event object
 - Layout of the overall system
+- EventManager and testing
+- DB choice finalization
 ### Yet to be done:
-- Finalize creation and testing of the EventManager class to properly control active events
+- Replace existing Postgres code with MongoDB/Mongoose code
 - Create connecting class between EventManager and the DB controller
 - Handle actual server requests and socket actions
 
