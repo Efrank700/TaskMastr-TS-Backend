@@ -5,7 +5,7 @@ This code repository represents the back end of the TaskMastr system. TaskMastr 
 
 ## Technologies involved:
 - TaskMastr is powered by Node.js, allowing from easy socket handling and non-blocking I/O, with the ability to later integrate additional asynchrenous features. (With Luck, we might even have to start optimizing with C++)
-- PostgreSQL is used to store models of the Events for the purposes of long-term material and password information storage
+- MongoDB is used to store models of the Events for the purposes of long-term material and password information storage
 - TypeScript is used to enhance developer productivity and provide more thorough protection against errors
 - Testing is executed with the Mocha and Chai libraries
 - Automation with Gulp
