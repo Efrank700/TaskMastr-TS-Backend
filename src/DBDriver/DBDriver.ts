@@ -4,10 +4,9 @@ import {keyStore} from './KeyStore';
 import {participantTypes, admin, supervisor, runner, participant} from '../Participant';
 import {TaskMastrEvent} from '../Event';
 import * as bcrypt from "bcryptjs";
+(<any>mongoose).Promise = Promise;
 
-mongoose.connect('mongodb://127.0.0.1:27017');
-
-class MongoDriver {
+export class MongoDriver {
 
     private static async generateKey(): Promise<number> {
         try {
@@ -28,8 +27,10 @@ class MongoDriver {
 
     public static async generateKeySet(): Promise<number[]> {
         try {
-            let res = [await this.generateKey(), await this.generateKey(), await this.generateKey()];
-            return res;
+            let firstResult = await this.generateKey();
+            let secondResult = await this.generateKey();
+            let thirdResult = await this.generateKey();
+            return [firstResult, secondResult, thirdResult];
         } catch (error) {
             const castError = error as Error
             throw new Error(castError.message);
@@ -200,8 +201,7 @@ class MongoDriver {
     public static async addMaterials(evKey: number, materialName: string, quantity: number): 
                                      Promise<boolean | null> {
         try {
-            let resPromise = eventStore.findOne().or([{adminKey: evKey}, 
-                                                     {supervisorKey: evKey}]);
+            let resPromise = eventStore.findOne({adminKey: evKey});
             if(quantity <= 0) return null;
             let res = await resPromise;
             if(res === null) return null;
@@ -218,6 +218,36 @@ class MongoDriver {
                 res.materials.push({itemName: materialName, count: quantity});
                 await res.save();
                 return false;
+            }
+        } catch (error) {
+            const castError = error as Error
+            throw new Error(castError.message);
+        }
+    }
+
+    public static async removeMaterials(evKey: number, materialName: string, quantity: number):
+                                        Promise<boolean | null> {
+        try {
+            let resPromise = eventStore.findOne({adminKey: evKey});
+            if(quantity <= 0) return null;
+            let res = await resPromise;
+            if(res === null) return null;
+            let materials = res.materials;
+            const targetIndex = materials.findIndex((target) => {
+                return target.itemName === materialName
+            })
+            if(targetIndex !== -1) {
+               return false;
+            }
+            else {
+                if(materials[targetIndex].count < quantity) {
+                    return false;
+                }
+                else {
+                    res.materials[targetIndex].count -= quantity;
+                    await res.save();
+                    return true;
+                }
             }
         } catch (error) {
             const castError = error as Error
