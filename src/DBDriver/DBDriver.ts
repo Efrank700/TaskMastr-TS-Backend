@@ -27,9 +27,12 @@ export class MongoDriver {
 
     public static async generateKeySet(): Promise<number[]> {
         try {
-            let firstResult = await this.generateKey();
-            let secondResult = await this.generateKey();
-            let thirdResult = await this.generateKey();
+            let firstResultPromise = this.generateKey();
+            let secondResultPromise = this.generateKey();
+            let thirdResultPromise = this.generateKey();
+            let firstResult = await firstResultPromise;
+            let secondResult = await secondResultPromise;
+            let thirdResult = await thirdResultPromise;
             return [firstResult, secondResult, thirdResult];
         } catch (error) {
             const castError = error as Error
@@ -135,11 +138,21 @@ export class MongoDriver {
         }
     }
 
+    public static async eventNameAvailable(eventName: string): Promise<Boolean> {
+        try {
+            let res = await eventStore.findOne({eventName: eventName})
+            return res === null;
+        } catch (error) {
+            const castError = error as Error
+            throw new Error(castError.message);
+        }
+    }
+
     public static async createEvent(eventName: string, owner: admin, ownerUser: string, 
                                     ownerPass: string): Promise<TaskMastrEvent | null> {
         try {
             let keysPromise = this.generateKeySet();
-            let nameExists = (await eventStore.findOne({'eventName': eventName})) === null;
+            let nameExists = (await eventStore.findOne({'eventName': eventName})) !== null;
             if(nameExists) return null;
             let keys = await keysPromise;
             let evToSave = new eventStore({
@@ -183,6 +196,9 @@ export class MongoDriver {
             if(typeof eventIdentifier === "string") {
                 let res = await eventStore.findOne({adminKey: eventIdentifier});
                 if(res === null) return null;
+                keyStore.findOneAndRemove({key: res.adminKey});
+                keyStore.findOneAndRemove({key: res.supervisorKey});
+                keyStore.findOneAndRemove({key: res.runnerKey});
                 let delResponse = await res.remove();
                 return (delResponse != null);
             }
