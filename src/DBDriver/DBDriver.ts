@@ -41,7 +41,7 @@ export class MongoDriver {
     }
 
     public static async userNameAvailable(evKey: number, userName: string): 
-                                          Promise<Boolean | null> {
+                                          Promise<boolean | null> {
         try {
             let res = await eventStore.findOne().or([
                 {adminKey: evKey}, 
@@ -56,7 +56,7 @@ export class MongoDriver {
     }
 
     public static async screenNameAvailable(evKey: number, screenName: string): 
-                                            Promise<Boolean | null> {
+                                            Promise<boolean | null> {
         try {
             let res = await eventStore.findOne().or([
                 {adminKey: evKey}, 
@@ -125,7 +125,7 @@ export class MongoDriver {
         }
     }
 
-    public static async deleteUser(evKey: number, userName: string): Promise<Boolean | null> {
+    public static async deleteUser(evKey: number, userName: string): Promise<boolean | null> {
         try {
             let res = await eventStore.findOneAndUpdate({$or: [{adminKey: evKey}, 
                 {supervisorKey: evKey}, {runnerKey: evKey}]}, 
@@ -138,7 +138,7 @@ export class MongoDriver {
         }
     }
 
-    public static async eventNameAvailable(eventName: string): Promise<Boolean> {
+    public static async eventNameAvailable(eventName: string): Promise<boolean> {
         try {
             let res = await eventStore.findOne({eventName: eventName})
             return res === null;
@@ -191,28 +191,40 @@ export class MongoDriver {
         }
     }
 
-    public static async deleteEvent(eventIdentifier: number | string): Promise<Boolean | null> {
+    public static async deleteEventByName(eventIdentifier: string): Promise<boolean> {
         try {
-            if(typeof eventIdentifier === "string") {
-                let res = await eventStore.findOne({adminKey: eventIdentifier});
-                if(res === null) return null;
-                keyStore.findOneAndRemove({key: res.adminKey});
-                keyStore.findOneAndRemove({key: res.supervisorKey});
-                keyStore.findOneAndRemove({key: res.runnerKey});
-                let delResponse = await res.remove();
-                return (delResponse != null);
-            }
-            else {
-                let res = await eventStore.findOne({eventName: eventIdentifier});
-                if(res === null) return null;
-                let delResponse = await res.remove();
-                return (delResponse != null);
-            }
+            let delResponse = await eventStore.findOneAndRemove({eventName: eventIdentifier});
+            if(delResponse === null) return false;
+            keyStore.findOneAndRemove({key: delResponse.adminKey});
+            keyStore.findOneAndRemove({key: delResponse.supervisorKey});
+            keyStore.findOneAndRemove({key: delResponse.runnerKey});
+            return (true);
         } catch (error) {
-            const castError = error as Error
-            throw new Error(castError.message);
+            throw new Error(error);
         }
     }
+    
+    public static async deleteEventByAdminID(eventIdentifier: number): Promise<boolean> {
+        try {
+            let targetEvent = await eventStore.findOne({adminKey: eventIdentifier})
+            if(targetEvent === null){
+                console.log("FAAAAAAAAAAAAAAAAIL 1::::::" + eventIdentifier);
+                return false;
+            } 
+            let delResponse = await eventStore.findOneAndRemove({adminKey: eventIdentifier});
+            if(delResponse === null){
+                console.log("FAAAAAAAAAAAAAAAAIL 2222::::::" + eventIdentifier);
+                return false;
+            } 
+            keyStore.findOneAndRemove({key: delResponse.adminKey});
+            keyStore.findOneAndRemove({key: delResponse.supervisorKey});
+            keyStore.findOneAndRemove({key: delResponse.runnerKey});
+            return (true);
+        } catch (error) {
+            throw new Error(error);
+        }
+    }
+    
 
     public static async addMaterials(evKey: number, materialName: string, quantity: number): 
                                      Promise<boolean | null> {
