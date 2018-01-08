@@ -87,13 +87,14 @@ export class MongoDriver {
             if(evKey === res.adminKey) position = 0;
             else if(evKey === res.supervisorKey) position = 1;
             else position = 2;
-            eventStore.findOneAndUpdate({eventName: res.eventName}, 
+            let result = eventStore.findOneAndUpdate({eventName: res.eventName}, 
                 {$push: {logins: {user: userName, pass: await passPromise, screenName: userScreen,
                                   pos: position}}});
             let retVal: participantTypes;
             if(position === 0) retVal = participantTypes.admin;
             else if(position === 1) retVal = participantTypes.supervisor;
             else retVal = participantTypes.runner;
+            await result;
             return retVal;
         } catch (error) {
             const castError = error as Error
@@ -207,15 +208,9 @@ export class MongoDriver {
     public static async deleteEventByAdminID(eventIdentifier: number): Promise<boolean> {
         try {
             let targetEvent = await eventStore.findOne({adminKey: eventIdentifier})
-            if(targetEvent === null){
-                console.log("FAAAAAAAAAAAAAAAAIL 1::::::" + eventIdentifier);
-                return false;
-            } 
+            if(targetEvent === null)return false;
             let delResponse = await eventStore.findOneAndRemove({adminKey: eventIdentifier});
-            if(delResponse === null){
-                console.log("FAAAAAAAAAAAAAAAAIL 2222::::::" + eventIdentifier);
-                return false;
-            } 
+            if(delResponse === null) return false;
             keyStore.findOneAndRemove({key: delResponse.adminKey});
             keyStore.findOneAndRemove({key: delResponse.supervisorKey});
             keyStore.findOneAndRemove({key: delResponse.runnerKey});

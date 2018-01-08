@@ -5,6 +5,7 @@ import {MongoDriver} from '../DBDriver/DBDriver';
 import * as mongoose from 'mongoose';
 import {eventStore} from '../DBDriver/EventStore';
 import {keyStore} from '../DBDriver/KeyStore';
+import { participantTypes } from '../Participant';
 (<any>mongoose).Promise = Promise;
 
 let genAdmin: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
@@ -121,7 +122,7 @@ describe('Mongoose Driver tests', () => {
     })
 
     /*Test error due to latency issues with Mongo. Resolution to be investigated later.
-      Tested methods confirmed to work individually
+      Tested methods confirmed to work individually.
     it('successfully deletes event with proper key', (done) => {
         MongoDriver.createEvent("ev2", genAdmin, "user", "pass").then((res) => {
             if(res === null) {
@@ -164,4 +165,100 @@ describe('Mongoose Driver tests', () => {
             done(err);
         })
     })*/
+
+    it('will return null if admin key is not valid', (done) => {
+        MongoDriver.deleteEventByAdminID(-1).then((res) => {
+            expect(res).to.be.false;
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+    
+    it('will return null if event name is not valid', (done) => {
+        MongoDriver.deleteEventByName("invalidEV").then((res) => {
+            expect(res).to.be.false;
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('can add user properly given proper values', function(done) {
+        this.retries(1);
+        MongoDriver.createEvent("userEvent", genAdmin, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "userEvent"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(1).to.equal(0);
+                        done()
+                    }
+                    else {
+                        MongoDriver.addUser(findRes.adminKey, "target", "target", "target").then((addRes) => {
+                            expect(addRes).to.equal(participantTypes.admin);
+                            eventStore.findOne({eventName: "userEvent"}).then((findRes) => {
+                                if(findRes === null) {
+                                    expect(1).to.equal(2);
+                                    eventStore.findOneAndRemove({eventName: "userEvent"}).then((end) => {
+                                        done()
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                                else {
+                                    expect(findRes.logins.length).to.equal(2);
+                                    expect(findRes.logins.findIndex((target) => {
+                                        return target.screenName == "target";
+                                    })).to.not.equal(-1);
+                                    eventStore.findOneAndRemove({eventName: "userEvent"}).then((end) => {
+                                        done()
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else {
+                MongoDriver.addUser(res.$adminKey, "target", "target", "target").then((addRes) => {
+                    expect(addRes).to.equal(participantTypes.admin);
+                    eventStore.findOne({eventName: "userEvent"}).then((findRes) => {
+                        if(findRes === null) {
+                            expect(1).to.equal(3);
+                            eventStore.findOneAndRemove({eventName: "userEvent"}).then((end) => {
+                                done()
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }
+                        else {
+                            expect(findRes.logins.length).to.equal(2);
+                            expect(findRes.logins.findIndex((target) => {
+                                return target.screenName == "target";
+                            })).to.not.equal(-1);
+                            eventStore.findOneAndRemove({eventName: "userEvent"}).then((end) => {
+                                done()
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }
+                    }).catch((err) => {
+                        done(err);
+                    })
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
 })
