@@ -102,7 +102,7 @@ export class MongoDriver {
         }
     }
 
-    public static async athenticate(evKey: number, userName: string, userPass: string): 
+    public static async authenticate(evKey: number, userName: string, userPass: string): 
                                     Promise<[boolean, string, participantTypes]> {
         try {
             let res = await eventStore.findOne().or([
@@ -118,6 +118,11 @@ export class MongoDriver {
             if(targetUser.pos === 0) participantType = participantTypes.admin;
             else if(targetUser.pos === 1) participantType = participantTypes.supervisor;
             else participantType = participantTypes.runner;
+            if(targetUser.pos === 0 && evKey !== res.adminKey 
+                || targetUser.pos === 1 && evKey !== res.supervisorKey
+                || targetUser.pos === 2 && evKey !== res.runnerKey) {
+                    return([false, "IKEY", participantTypes.admin]);
+                }
             if(!(await passMatchPromise)) return([false, "IPASS", participantTypes.admin]);
             return([true, targetUser.screenName, participantType]);
         } catch (error) {
@@ -132,7 +137,10 @@ export class MongoDriver {
                 {supervisorKey: evKey}, {runnerKey: evKey}]}, 
                 {$pull: {logins: {user: userName}}});
             if(res === null) return null;
-            else return(res.logins.findIndex((user) => {return user.user === userName}) !== -1)
+            else {
+                let position = res.logins.findIndex((target) => {return target.user === userName});
+                return(position !== -1);
+            }
         } catch (error) {
             const castError = error as Error
             throw new Error(castError.message);
@@ -165,8 +173,9 @@ export class MongoDriver {
                 logins: [{user: ownerUser, pass: ownerPass, screenName: owner.screenName, pos: 0}],
                 materials: []
             })
-            evToSave.save();
+            let savePromise = evToSave.save();
             owner.roomName = eventName;
+            await savePromise;
             return new TaskMastrEvent(eventName, keys[0], keys[1], keys[2], owner, []);
         }
         catch (error){

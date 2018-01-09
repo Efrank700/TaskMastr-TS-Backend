@@ -185,7 +185,7 @@ describe('Mongoose Driver tests', () => {
     })
 
     it('can add user properly given proper values', function(done) {
-        this.retries(1);
+        this.retries(2);
         MongoDriver.createEvent("userEvent", genAdmin, "user", "pass").then((res) => {
             if(res === null) {
                 eventStore.findOne({eventName: "userEvent"}).then((findRes) => {
@@ -259,6 +259,138 @@ describe('Mongoose Driver tests', () => {
             }
         }).catch((err) => {
             done(err);
+        })
+    })
+
+    it('Throws error when attempting to add a repeat user', (done) => {
+        MongoDriver.addUser(1111, "user", "screen", "pass").then((typeRes) => {
+            if(typeRes === null) {
+                expect(0).to.equal(1);
+                done()
+            }
+            else {
+                MongoDriver.addUser(1111, "user", "screen", "pass").then((res) => {
+                    if(res != undefined) expect(0).to.equal(2);
+                    done()
+                }).catch((err) => {
+                    const castErr = err as Error;
+                    if(castErr.message === "SUEXISTS") {
+                        expect(1).to.equal(1);
+                        done()
+                    }
+                    else {
+                        done(err);
+                    }
+                })
+            }
+        }).catch((err) => {
+            const castErr = err as Error;
+            if(castErr.message === "SUEXISTS") {
+                expect(1).to.equal(1);
+                done()
+            }
+            else {
+                done(err);
+            }
+        })
+    })
+
+    it('Returns null when finding unlisted event', (done) => {
+        MongoDriver.addUser(-1, "user", "screen", "pass").then((res) => {
+            expect(res).to.be.null;
+            done()
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('authenticates when supplied proper info', (done) => {
+        MongoDriver.authenticate(1111, "user", "pass").then((res) => {
+            if(res === null) {
+                expect(0).to.equal(1);
+                done();
+            }
+            else {
+                expect(res[0]).to.be.true;
+                expect(res[1]).to.equal("screen");
+                expect(res[2]).to.equal(participantTypes.admin);
+                done();
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('fails authentication when supplied incorrect key', (done) => {
+        MongoDriver.authenticate(1112, "user", "pass").then((res) => {
+            if(res === null) {
+                expect(0).to.equal(1);
+                done();
+            }
+            else {
+                expect(res[0]).to.be.false;
+                expect(res[1]).to.equal("IKEY");
+                expect(res[2]).to.equal(participantTypes.admin);
+                done();
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('fails authentication when supplied invalid event', (done) => {
+        MongoDriver.authenticate(-1, "user", "pass").then((res) => {
+            expect(res[0]).to.be.false;
+            expect(res[1]).to.equal("NSEVENT");
+            expect(res[2]).to.equal(participantTypes.admin);
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('fails authentication when supplied invalid username', (done) => {
+        MongoDriver.authenticate(1111, "user1", "pass").then((res) => {
+            expect(res[0]).to.be.false;
+            expect(res[1]).to.equal("NSUSER");
+            expect(res[2]).to.equal(participantTypes.admin);
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('fails authentication when supplied invalid password', (done) => {
+        MongoDriver.authenticate(1111, "user", "pass1").then((res) => {
+            expect(res[0]).to.be.false;
+            expect(res[1]).to.equal("IPASS");
+            expect(res[2]).to.equal(participantTypes.admin);
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('can delete user', function(done) {
+        this.retries(2);
+        MongoDriver.addUser(1111, "user", "screen", "pass").then((res) => {
+            MongoDriver.deleteUser(1111, "user").then((ev) => {
+                expect(ev).to.be.true;
+                done()
+            }).catch((err) => {
+                done(err);
+            })
+        }).catch((err) => {
+            const castErr = err as Error;
+            if(castErr.message === "SUEXISTS") {
+                MongoDriver.deleteUser(1111, "user").then((ev) => {
+                    expect(ev).to.be.true;
+                    done()
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else done(err);
         })
     })
 })
