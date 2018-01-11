@@ -14,6 +14,7 @@ let genAdmin3: admin = {screenName: 'hi', roomName: 'eventName', location: null,
 let genAdmin4: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
 let genAdmin5: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
 let genAdmin6: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin7: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
 
 describe('Mongoose Driver tests', () => {
     let connectPromise: mongoose.MongooseThenable;
@@ -571,6 +572,419 @@ describe('Mongoose Driver tests', () => {
                     done(err);
                 })
             }
+        })
+    })
+
+    it('can remove materials given appropriate count and event', (done) => {
+        MongoDriver.createEvent('remMatEvent', genAdmin7, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "remMatEvent"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(0).to.equal(1);
+                        done();
+                    }
+                    else {
+                        MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((addRes) => {
+                            if(addRes === null) {
+                                MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                    expect(0).to.equal(2);
+                                    done();
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                            else {
+                                MongoDriver.removeMaterials(findRes.adminKey, "pencils", 4).then((remRes) => {
+                                    eventStore.findOne({adminKey: findRes.adminKey}).then((remFindRes) => {
+                                        if(remFindRes === null) {
+                                            MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                                expect(0).to.equal(3);
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                        else {
+                                            MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                                expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                                expect(remFindRes.materials[0].count).to.equal(1);
+                                                expect(remRes).to.be.true;
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else {
+                MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((addRes) => {
+                    if(addRes === null) {
+                        MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                            expect(0).to.equal(2);
+                            done();
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                    else {
+                        MongoDriver.removeMaterials(res.$adminKey, "pencils", 4).then((remRes) => {
+                            eventStore.findOne({adminKey: res.$adminKey}).then((remFindRes) => {
+                                if(remFindRes === null) {
+                                    MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                        expect(0).to.equal(3);
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                                else {
+                                    MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                        expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                        expect(remFindRes.materials[0].count).to.equal(1);
+                                        expect(remRes).to.be.true;
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('returns false when attempting to remove too many of an item', (done) => {
+        MongoDriver.createEvent('remMatEvent', genAdmin7, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "remMatEvent"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(0).to.equal(1);
+                        done();
+                    }
+                    else {
+                        MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((addRes) => {
+                            if(addRes === null) {
+                                MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                    expect(0).to.equal(2);
+                                    done();
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                            else {
+                                MongoDriver.removeMaterials(findRes.adminKey, "pencils", 6).then((remRes) => {
+                                    eventStore.findOne({adminKey: findRes.adminKey}).then((remFindRes) => {
+                                        if(remFindRes === null) {
+                                            MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                                expect(0).to.equal(3);
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                        else {
+                                            MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                                expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                                expect(remFindRes.materials[0].count).to.equal(5);
+                                                expect(remRes).to.be.false;
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else {
+                MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((addRes) => {
+                    if(addRes === null) {
+                        MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                            expect(0).to.equal(2);
+                            done();
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                    else {
+                        MongoDriver.removeMaterials(res.$adminKey, "pencils", 6).then((remRes) => {
+                            eventStore.findOne({adminKey: res.$adminKey}).then((remFindRes) => {
+                                if(remFindRes === null) {
+                                    MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                        expect(0).to.equal(3);
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                                else {
+                                    MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                        expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                        expect(remFindRes.materials[0].count).to.equal(5);
+                                        expect(remRes).to.be.false;
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('returns null when attempting to remove negative items', (done) => {
+        MongoDriver.createEvent('remMatEvent', genAdmin7, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "remMatEvent"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(0).to.equal(1);
+                        done();
+                    }
+                    else {
+                        MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((addRes) => {
+                            if(addRes === null) {
+                                MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                    expect(0).to.equal(2);
+                                    done();
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                            else {
+                                MongoDriver.removeMaterials(findRes.adminKey, "pencils", -6).then((remRes) => {
+                                    eventStore.findOne({adminKey: findRes.adminKey}).then((remFindRes) => {
+                                        if(remFindRes === null) {
+                                            MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                                expect(0).to.equal(3);
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                        else {
+                                            MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                                expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                                expect(remFindRes.materials[0].count).to.equal(5);
+                                                expect(remRes).to.be.null;
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else {
+                MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((addRes) => {
+                    if(addRes === null) {
+                        MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                            expect(0).to.equal(2);
+                            done();
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                    else {
+                        MongoDriver.removeMaterials(res.$adminKey, "pencils", -6).then((remRes) => {
+                            eventStore.findOne({adminKey: res.$adminKey}).then((remFindRes) => {
+                                if(remFindRes === null) {
+                                    MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                        expect(0).to.equal(3);
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                                else {
+                                    MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                        expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                        expect(remFindRes.materials[0].count).to.equal(5);
+                                        expect(remRes).to.be.null;
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
+    
+    it('returns false when attempting to remove non-existant itme', (done) => {
+        MongoDriver.createEvent('remMatEvent', genAdmin7, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "remMatEvent"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(0).to.equal(1);
+                        done();
+                    }
+                    else {
+                        MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((addRes) => {
+                            if(addRes === null) {
+                                MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                    expect(0).to.equal(2);
+                                    done();
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                            else {
+                                MongoDriver.removeMaterials(findRes.adminKey, "pencil", 1).then((remRes) => {
+                                    eventStore.findOne({adminKey: findRes.adminKey}).then((remFindRes) => {
+                                        if(remFindRes === null) {
+                                            MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                                expect(0).to.equal(3);
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                        else {
+                                            MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                                expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                                expect(remFindRes.materials[0].count).to.equal(5);
+                                                expect(remRes).to.be.false;
+                                                done();
+                                            }).catch((err) => {
+                                                done(err);
+                                            })
+                                        }
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }).catch((err) => {
+                                    done(err);
+                                })
+                            }
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else {
+                MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((addRes) => {
+                    if(addRes === null) {
+                        MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                            expect(0).to.equal(2);
+                            done();
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                    else {
+                        MongoDriver.removeMaterials(res.$adminKey, "pencil", 1).then((remRes) => {
+                            eventStore.findOne({adminKey: res.$adminKey}).then((remFindRes) => {
+                                if(remFindRes === null) {
+                                    MongoDriver.deleteEventByName("remMatEvent").then((delRes) => {
+                                        expect(0).to.equal(3);
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                                else {
+                                    MongoDriver.deleteEventByAdminID(remFindRes.adminKey).then((delRes) => {
+                                        expect(remFindRes.materials[0].itemName).to.equal("pencils");
+                                        expect(remFindRes.materials[0].count).to.equal(5);
+                                        expect(remRes).to.be.false;
+                                        done();
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('returns null when told to remove from non-existant event', (done) => {
+        MongoDriver.removeMaterials(-1, "pencils", 1).then((res) => {
+            expect(res).to.be.null;
+            done()
+        }).catch((err) => {
+            done(err);
         })
     })
 })

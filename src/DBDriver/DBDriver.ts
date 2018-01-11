@@ -268,7 +268,7 @@ export class MongoDriver {
             const targetIndex = materials.findIndex((target) => {
                 return target.itemName === materialName
             })
-            if(targetIndex !== -1) {
+            if(targetIndex === -1) {
                return false;
             }
             else {
