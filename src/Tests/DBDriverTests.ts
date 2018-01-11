@@ -8,7 +8,12 @@ import {keyStore} from '../DBDriver/KeyStore';
 import { participantTypes } from '../Participant';
 (<any>mongoose).Promise = Promise;
 
-let genAdmin: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin1: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin2: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin3: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin4: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin5: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
+let genAdmin6: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
 
 describe('Mongoose Driver tests', () => {
     let connectPromise: mongoose.MongooseThenable;
@@ -56,7 +61,7 @@ describe('Mongoose Driver tests', () => {
     })
 
     it('generates event, does not allow for a repeat', (done) => {
-        MongoDriver.createEvent('eventName', genAdmin, 'ownerUser', 'ownerPass').then((res) => {
+        MongoDriver.createEvent('eventName', genAdmin1, 'ownerUser', 'ownerPass').then((res) => {
             let success = res != null;
             eventStore.find({eventName: "eventName"}).then((res1) => {
                 if(!success){ 
@@ -76,7 +81,7 @@ describe('Mongoose Driver tests', () => {
     })
 
     it('can identify event name availability', (done) => {
-        MongoDriver.createEvent('notAvailable', genAdmin, 'ownerUser', 'ownerPass').then((res) => {
+        MongoDriver.createEvent('notAvailable', genAdmin2, 'ownerUser', 'ownerPass').then((res) => {
             MongoDriver.eventNameAvailable('notAvailable').then((availability) => {
                 expect(availability).to.be.false;
                 MongoDriver.eventNameAvailable('available').then((freedom) => {
@@ -99,7 +104,7 @@ describe('Mongoose Driver tests', () => {
             MongoDriver.retrieveEvent(adminNumber).then((event) => {
                 if(event === null) expect(1).to.equal(0);
                 else {
-                    expect(event.$owner).to.equal(genAdmin.screenName);
+                    expect(event.$owner).to.equal(genAdmin1.screenName);
                     expect(event.$eventName).to.equal("eventName");
                     expect(event.$adminKey).to.equal(adminNumber);
                     done();
@@ -122,9 +127,9 @@ describe('Mongoose Driver tests', () => {
     })
 
     /*Test error due to latency issues with Mongo. Resolution to be investigated later.
-      Tested methods confirmed to work individually.
+      Tested methods confirmed to work individually.*/
     it('successfully deletes event with proper key', (done) => {
-        MongoDriver.createEvent("ev2", genAdmin, "user", "pass").then((res) => {
+        MongoDriver.createEvent("ev2", genAdmin3, "user", "pass").then((res) => {
             if(res === null) {
                 eventStore.findOne({eventName: "ev2"}).then((findRes) => {
                     if(findRes === null) {
@@ -134,8 +139,6 @@ describe('Mongoose Driver tests', () => {
                     else {
                         MongoDriver.deleteEventByAdminID(findRes.adminKey).then((delRes) => {
                             eventStore.findOne({eventName: "ev2"}).then((endRes) => {
-                                if(findRes !== null) console.log(`:::::::::::::::::${findRes.adminKey}`);
-                                if(delRes !== null) console.log(`;;;;;;;;;;;;;;;;;;;;;${findRes.adminKey}`)
                                 expect(delRes).to.be.true;
                                 expect(endRes).to.be.null;
                                 done();
@@ -164,7 +167,7 @@ describe('Mongoose Driver tests', () => {
         }).catch((err) => {
             done(err);
         })
-    })*/
+    })
 
     it('will return null if admin key is not valid', (done) => {
         MongoDriver.deleteEventByAdminID(-1).then((res) => {
@@ -186,7 +189,7 @@ describe('Mongoose Driver tests', () => {
 
     it('can add user properly given proper values', function(done) {
         this.retries(2);
-        MongoDriver.createEvent("userEvent", genAdmin, "user", "pass").then((res) => {
+        MongoDriver.createEvent("userEvent", genAdmin4, "user", "pass").then((res) => {
             if(res === null) {
                 eventStore.findOne({eventName: "userEvent"}).then((findRes) => {
                     if(findRes === null) {
@@ -391,6 +394,183 @@ describe('Mongoose Driver tests', () => {
                 })
             }
             else done(err);
+        })
+    })
+
+    it('returns null on delete user for invalid event', (done) => {
+        MongoDriver.deleteUser(-1, "fun").then((res) => {
+            expect(res).to.be.null;
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('returns false on delete user for invalid user', (done) => {
+        MongoDriver.deleteUser(1111, "fun").then((res) => {
+            expect(res).to.be.false;
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('can add new type of material to existing event', (done) => {
+        MongoDriver.createEvent("matTestEvent", genAdmin5, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "matTestEvent"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(0).to.equal(1);
+                        done()
+                    }
+                    else {
+                        MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((addRes) => {
+                            expect(addRes).to.be.false;
+                            eventStore.findOne({eventName: "matTestEvent"}).then((materialFind) => {
+                                if(materialFind === null) {
+                                    expect(0).to.equal(2);
+                                    done()
+                                }
+                                else {
+                                   expect(materialFind.materials[0].itemName).to.equal("pencils");
+                                   expect(materialFind.materials[0].count).to.equal(5);
+                                   eventStore.findOneAndRemove({adminKey: findRes.adminKey})
+                                   .then((delRes) => {
+                                        done()
+                                   }).catch((err) => {
+                                    done(err);
+                                })
+                                }
+                            }).catch((err) => {
+                                done(err);
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else{
+                MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((addRes) => {
+                    expect(addRes).to.be.false;
+                    eventStore.findOne({eventName: "matTestEvent"}).then((materialFind) => {
+                        if(materialFind === null) {
+                            expect(0).to.equal(2);
+                            done()
+                        }
+                        else {
+                           expect(materialFind.materials[0].itemName).to.equal("pencils");
+                           expect(materialFind.materials[0].count).to.equal(5);
+                           eventStore.findOneAndRemove({adminKey: res.$adminKey})
+                           .then((delRes) => {
+                                done()
+                           }).catch((err) => {
+                            done(err);
+                        })
+                        }
+                    }).catch((err) => {
+                        done(err);
+                    })
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+        })
+    })
+
+    it('returns null for adding material to invalid event', (done) => {
+        MongoDriver.addMaterials(-1, "pencils", 5).then((res) => {
+            expect(res).to.be.null;
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('successfully adds material to event with existing material', (done) => {
+        MongoDriver.createEvent("matTestEvent1", genAdmin6, "user", "pass").then((res) => {
+            if(res === null) {
+                eventStore.findOne({eventName: "matTestEvent1"}).then((findRes) => {
+                    if(findRes === null) {
+                        expect(0).to.equal(1);
+                        done()
+                    }
+                    else {
+                        MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((initialAddRes) => {
+                            if(initialAddRes === null) {
+                                expect(0).to.equal(3);
+                                done();
+                            }
+                            MongoDriver.addMaterials(findRes.adminKey, "pencils", 5).then((addRes) => {
+                                if(addRes === null) {
+                                    expect(0).to.equal(3);
+                                    done();
+                                }
+                                else {
+                                    expect(addRes).to.be.true;
+                                    eventStore.findOne({eventName: "matTestEvent1"}).then((materialFind) => {
+                                        if(materialFind === null) {
+                                            expect(0).to.equal(2);
+                                            done()
+                                        }
+                                        else {
+                                           expect(materialFind.materials[0].itemName).to.equal("pencils");
+                                           expect(materialFind.materials[0].count).to.equal(10);
+                                           eventStore.findOneAndRemove({adminKey: materialFind.adminKey})
+                                           .then((delRes) => {
+                                                done()
+                                           }).catch((err) => {
+                                            done(err);
+                                        })
+                                        }
+                                    }).catch((err) => {
+                                        done(err);
+                                    })
+                                }
+                            })
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else{
+                MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((initialAddRes) => {
+                    if(initialAddRes === null) {
+                        expect(0).to.equal(3);
+                        done();
+                    }
+                    MongoDriver.addMaterials(res.$adminKey, "pencils", 5).then((addRes) => {
+                        expect(addRes).to.be.true;
+                        eventStore.findOne({eventName: "matTestEvent1"}).then((materialFind) => {
+                            if(materialFind === null) {
+                                expect(0).to.equal(2);
+                                done()
+                            }
+                            else {
+                               expect(materialFind.materials[0].itemName).to.equal("pencils");
+                               expect(materialFind.materials[0].count).to.equal(10);
+                               eventStore.findOneAndRemove({adminKey: res.$adminKey})
+                               .then((delRes) => {
+                                    done()
+                               }).catch((err) => {
+                                done(err);
+                            })
+                            }
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }).catch((err) => {
+                        done(err);
+                    })
+                }).catch((err) => {
+                    done(err);
+                })
+            }
         })
     })
 })
