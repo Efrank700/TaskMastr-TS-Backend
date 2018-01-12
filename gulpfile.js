@@ -49,12 +49,16 @@ gulp.task('watchMongoEvent', ['scripts'], () => {
   gulp.watch(['src/DBDriver/*.ts', 'src/Tests/DBDriverTests.ts'], ['scripts', 'mocha_MongoEvent']);
 });
 
+gulp.task('watchActionHandler', ['scripts'], () => {
+  gulp.watch(['./src/ActionHandler.ts'], ['scripts']);
+})
+
 gulp.task('checkEvent',['watchEvent', 'mocha_event']);
 
 gulp.task('checkEventManager', ['watchEventManager', 'mocha_eventManager']);
 
 gulp.task('checkMongoEvent', ['watchMongoEvent', 'mocha_MongoEvent']);
 
-gulp.task('checkProj', ['checkEvent', 'checkEventManager', 'checkMongoEvent']);
+gulp.task('checkProj', ['checkEvent', 'checkEventManager', 'checkMongoEvent', 'watchActionHandler']);
 
 gulp.task('default', ['checkProj', 'assets']);

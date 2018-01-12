@@ -24,6 +24,22 @@ export class EventManager{
         return(this.eventList);
     }
 
+    findEventByName(evName: string): TaskMastrEvent | null{
+        let index = this.eventList.findIndex((target) => {return target.$eventName === evName});
+        if(index === -1) return null;
+        else return this.eventList[index];
+    }
+
+    findEventByKey(evKey: number): TaskMastrEvent | null{
+        let index = this.eventList.findIndex((target) => {
+            return (target.$adminKey === evKey 
+                    || target.$supervisorKey === evKey 
+                    || target.$runnerKey === evKey)
+        })
+        if(index === -1) return null;
+        else return this.eventList[index];
+    }
+
     /******************************************************************************************************
     **************************************EVENT MANIPULATION***********************************************
     ******************************************************************************************************/
