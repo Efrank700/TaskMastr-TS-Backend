@@ -30,14 +30,28 @@ export class EventManager{
         else return this.eventList[index];
     }
 
-    findEventByKey(evKey: number): TaskMastrEvent | null{
+    findEventByKey(evKey: number): string | null{
         let index = this.eventList.findIndex((target) => {
             return (target.$adminKey === evKey 
                     || target.$supervisorKey === evKey 
                     || target.$runnerKey === evKey)
         })
         if(index === -1) return null;
-        else return this.eventList[index];
+        else return this.eventList[index].$eventName;
+    }
+
+    containsEventByName(evName: string): boolean {
+        let index = this.eventList.findIndex((target) => {return target.$eventName === evName});
+        return index !== -1;
+    }
+
+    containsEventByKey(evKey: number): boolean {
+        let index = this.eventList.findIndex((target) => {
+            return (target.$adminKey === evKey 
+                    || target.$supervisorKey === evKey 
+                    || target.$runnerKey === evKey)
+        })
+        return index !== -1;
     }
 
     /******************************************************************************************************
