@@ -16,10 +16,10 @@ This code repository represents the back end of the TaskMastr system. TaskMastr 
 - A rough prototype of Event object
 - Layout of the overall system
 - EventManager and testing
-- DB choice finalization
+- DB controller implementation and testing
 ### Yet to be done:
-- Replace existing Postgres code with MongoDB/Mongoose code
 - Create connecting class between EventManager and the DB controller
+- Implement request validation and sanitization
 - Handle actual server requests and socket actions
 
 ### Currently floating ideas:
