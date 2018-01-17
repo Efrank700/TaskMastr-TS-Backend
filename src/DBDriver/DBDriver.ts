@@ -102,6 +102,24 @@ export class MongoDriver {
         }
     }
 
+    public static async authenticateOwner(evKey: number, ownerUser: string, ownerPass: string):
+    Promise<[boolean, string]> {
+        try {
+            let res = await eventStore.findOne({adminKey: evKey});
+            if(res === null) return [false, "NSEVENT"];
+            let adminIndex = res.logins.findIndex((target) => {return target.user === ownerUser});
+            if(adminIndex === -1) return [false, "NSUSER"];
+            let passMatchPromise = bcrypt.compare(ownerPass, res.logins[adminIndex].pass);
+            if(res.owner.screenName !== res.logins[adminIndex].screenName) return [false, "NOWNS"];
+            let matches = await passMatchPromise;
+            if(matches) return [true, "SUCCESS"];
+            return [false, "IPASS"];
+        } catch (error) {
+            const castError = error as Error;
+            throw new Error(castError.message);
+        }
+    }
+
     public static async authenticate(evKey: number, userName: string, userPass: string): 
                                     Promise<[boolean, string, participantTypes]> {
         try {

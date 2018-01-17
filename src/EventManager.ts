@@ -167,18 +167,20 @@ export class EventManager{
         return(room.addRunner(target));
     }
 
-    removeAdmin(target: admin): [admin | null, runner | null] | null{
-        let room = this.getEventByName(target.roomName);
+    removeAdmin(target: string, roomName: string): [admin | null, runner | null] | null{
+        let room = this.getEventByName(roomName);
         if (room === null || room === undefined) return(null);
+        let targetAdmin = room.getAdminByScreenName(target);
+        if(targetAdmin === null) return(null);
         let fullMatList = room.getUsedMaterialList();
         let targetMatList = <{itemName: string, count: number, user: admin | supervisor}[]>[];
         fullMatList.forEach(element => {
-            if (element.user === target) targetMatList.push(element);
+            if (element.user.screenName === target) targetMatList.push(element);
         });
         let retItemNames: string[] = [];
         let retItemQuants: number[] = [];
         targetMatList.forEach(element => {
-            let itemIndex = retItemNames.findIndex(stringElement => {
+            let itemIndex = retItemNames.findIndex((stringElement) => {
                 return element.itemName === stringElement;
             });
             if (itemIndex === -1) {
@@ -187,24 +189,26 @@ export class EventManager{
             } else retItemQuants[itemIndex] += element.count;
         });
         let depLoc: string;
-        if (target.location === null) {
-            depLoc = `UNKNOWN: LOCATION OF ${target.screenName} -- CONTACT ADMINISTRATOR`;
+        if (targetAdmin.location === null) {
+            depLoc = `UNKNOWN: LOCATION OF ${targetAdmin.screenName} -- CONTACT ADMINISTRATOR`;
         }
-        else depLoc = target.location;
+        else depLoc = targetAdmin.location;
         let retTask: task = {supervisor: room.$uniAdmin, runnerRequest: false, 
                              recieveLocation: depLoc, depositLocation: "HOME BASE", 
                              item: retItemNames, quantity: retItemQuants};
-        if (retItemNames.length > 0) return([room.removeAdmin(target), room.addTask(retTask)[2]]);
-        return([room.removeAdmin(target), null]);
+        if (retItemNames.length > 0) return([room.removeAdmin(targetAdmin), room.addTask(retTask)[2]]);
+        return([room.removeAdmin(targetAdmin), null]);
     }
     
-    removeSupervisor(target: supervisor): [supervisor | null, runner | null] | null{
-        let room = this.getEventByName(target.roomName);
+    removeSupervisor(target: string, roomName: string): [supervisor | null, runner | null] | null{
+        let room = this.getEventByName(roomName);
         if (room === null || room === undefined) return(null);
+        let targetSupervisor = room.getSupervisorByScreenName(target);
+        if(targetSupervisor === null) return(null);
         let fullMatList = room.getUsedMaterialList();
         let targetMatList = <{itemName: string, count: number, user: admin | supervisor}[]>[];
         fullMatList.forEach(element => {
-            if (element.user === target) targetMatList.push(element);
+            if (element.user.screenName === target) targetMatList.push(element);
         });
         let retItemNames: string[] = [];
         let retItemQuants: number[] = [];
@@ -218,26 +222,28 @@ export class EventManager{
             } else retItemQuants[itemIndex] += element.count;
         });
         let depLoc: string;
-        if (target.location === null) {
-            depLoc = `UNKNOWN: LOCATION OF ${target.screenName} -- CONTACT ADMINISTRATOR`;
+        if (targetSupervisor.location === null) {
+            depLoc = `UNKNOWN: LOCATION OF ${target} -- CONTACT ADMINISTRATOR`;
         }
-        else depLoc = target.location;
+        else depLoc = targetSupervisor.location;
         const retTask: task = {supervisor: room.$uniAdmin, runnerRequest: false, 
                              recieveLocation: depLoc, depositLocation: "HOME BASE", 
                              item: retItemNames, quantity: retItemQuants};
         if (retItemNames.length > 0)
             return([
-                room.removeSupervisor(target),
+                room.removeSupervisor(targetSupervisor),
                 room.addTask(retTask)[2]
             ]);
-        return([room.removeSupervisor(target), null]);
+        return([room.removeSupervisor(targetSupervisor), null]);
     }
     
-    removeRunner(target: runner): [boolean, runner | null, task | null] | null{
-        const room = this.getEventByName(target.roomName);
+    removeRunner(target: string, roomName: string): [boolean, runner | null, task | null] | null{
+        const room = this.getEventByName(roomName);
         if (room === null || room === undefined) return(null);
-        const task = target.task;
-        const res = room.removeRunner(target);
+        let targetRunner = room.getRunnerByScreenName(target);
+        if(targetRunner === null) return null
+        const task = targetRunner.task;
+        const res = room.removeRunner(targetRunner);
         return([res[0], res[1], task]);
     }
     

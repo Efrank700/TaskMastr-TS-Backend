@@ -18,20 +18,37 @@ let genAdmin7: admin = {screenName: 'hi', roomName: 'eventName', location: null,
 
 describe('Mongoose Driver tests', () => {
     let connectPromise: mongoose.MongooseThenable;
-    before(() => {
+    before((done) => {
         connectPromise = mongoose.connect('mongodb://127.0.0.1:27017', {useMongoClient: true});
         while(connectPromise.connection !== undefined && connectPromise.connection.readyState == 2);
+        eventStore.findOne({eventName: "targetEvent"}).then((res) => {
+            if(res === null) {
+                let evToSave = new eventStore({
+                    eventName: "targetEvent", 
+                    adminKey: 1111,
+                    supervisorKey: 1112,
+                    runnerKey: 1113,
+                    owner: {user: "ownerUser", pass: "ownerPass", screenName: "ownerScreen", pos: 0},
+                    logins: [{user: "ownerUser", pass: "ownerPass", screenName: "ownerScreen", pos: 0}],
+                    materials: []
+                });
+                evToSave.save().then((saveRes) => {
+                    done();
+                }).catch((err) => {
+                    done(err);
+                })
+            }
+            else {
+                done();
+            }
+        }).catch((err) => {
+            done(err);
+        })
     }) 
     after(() => {
         mongoose.disconnect();
     })
-    it('we are connected', (done) => {
-        connectPromise.then(() => {
-            done();
-        }).catch((err) => {
-            done(err);
-        })
-    })
+    
     it('generates keys', (done) => {
         MongoDriver.generateKeySet().then((numArr) => {
             let first = numArr[0];

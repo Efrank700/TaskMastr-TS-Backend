@@ -1,7 +1,7 @@
 import {MongoDriver} from "./DBDriver/DBDriver";
 import * as mongoose from 'mongoose';
 import {EventManager} from "./EventManager";
-import {TaskMastrEvent, admin, supervisor, runner, task} from "./Event";
+import {TaskMastrEvent, admin, supervisor, runner, task, participant} from "./Event";
 import {participantTypes} from "./Participant";
 
 mongoose.connection.on('error', console.error.bind(console, "MONGO ERROR"));
@@ -14,7 +14,7 @@ export class ActionHandler {
         while(connectPromise.connection !== undefined && connectPromise.connection.readyState == 2);
     }
 
-    public async addUser(user: string, screen: string, pass: string, socket: number,  eventKey: number, location?: string): Promise<[boolean, participantTypes] | null> {
+    public async addUserToEvent(user: string, screen: string, pass: string, socket: number,  eventKey: number, location?: string): Promise<[boolean, participantTypes] | null> {
         try {
             let findEVPromise = MongoDriver.addUser(eventKey, user, screen, pass);
             let retrieveEventPromise = MongoDriver.retrieveEvent(eventKey);
@@ -76,5 +76,39 @@ export class ActionHandler {
         } catch (error) {
             throw new Error(error);
         }
+    }
+
+    public async authenticates(user: string, pass: string, eventKey: number): Promise<[boolean, string, participantTypes]> {
+        try {
+            return MongoDriver.authenticate(eventKey, user, pass);
+        } catch (error) {
+            let castError = error as Error;
+            throw error;
+        }
+    }
+
+    public async removeAdmin(authorizingUser: string, authorizingPass: string, 
+                             targetUser: string, eventKey: number): 
+                             Promise<[boolean, admin| null, runner| null] | null> {
+        let authenticatePromise = this.authenticates(authorizingUser, authorizingPass, eventKey);
+        let eventName = this.events.findEventByKey(eventKey);
+        let authenticated = await authenticatePromise;
+        if(!authenticated[0] || authenticated[2] !== participantTypes.admin) {
+            return null;
+        }
+        let deletePromise = MongoDriver.deleteUser(eventKey, targetUser);
+        let delAdmin: [admin | null, runner | null] | null = null;
+        if(eventName !== null) {
+            delAdmin = this.events.removeAdmin(targetUser, eventName);
+        }
+        let retAdmin: admin|null = null;
+        let retRunner: runner|null = null;
+        if(delAdmin !== null) {
+            retAdmin = delAdmin[0];
+            retRunner = delAdmin[1];
+        }
+        let deleteResolution = await deletePromise;
+        if(deleteResolution === null) return([false, retAdmin, retRunner]);
+        else return([deleteResolution, retAdmin, retRunner]);
     }
 }

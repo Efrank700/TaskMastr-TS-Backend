@@ -88,7 +88,7 @@ describe("EventManager User Manipulations", () => {
     })
 
     it("Properly removes admin", () => {
-        let res = newManager.removeAdmin(genAdmin1);
+        let res = newManager.removeAdmin(genAdmin1.screenName, genAdmin1.roomName);
         if(res === null) expect(false).to.be.true;
          else{
             expect(res[0]).to.equal(genAdmin1);
@@ -98,7 +98,7 @@ describe("EventManager User Manipulations", () => {
     })
 
     it("Ignores remove on irrelevant admin", () => {
-        let res = newManager.removeAdmin(badAdmin);
+        let res = newManager.removeAdmin(badAdmin.screenName, badAdmin.roomName);
         expect(res).to.be.null; 
         expect(genEvent2.adminList().length).to.equal(1);
     })
@@ -126,7 +126,7 @@ describe("EventManager User Manipulations", () => {
     })
 
     it("Properly removes supervisor", () => {
-        let res = newManager.removeSupervisor(genSupervisor1);
+        let res = newManager.removeSupervisor(genSupervisor1.screenName, genSupervisor1.roomName);
         if(res === null) expect(false).to.be.true; 
         else{
             expect(res[0]).to.equal(genSupervisor1);
@@ -136,7 +136,7 @@ describe("EventManager User Manipulations", () => {
     })
 
     it("Ignores remove on irrelevant supervisor", () => {
-        let res = newManager.removeSupervisor(badSupervisor);
+        let res = newManager.removeSupervisor(badSupervisor.screenName, badSupervisor.roomName);
         expect(res).to.be.null;
         expect(genEvent2.supervisorList().length).to.equal(1);
     })
@@ -164,7 +164,7 @@ describe("EventManager User Manipulations", () => {
     })
 
     it("Properly removes runner", () => {
-        let res = newManager.removeRunner(genRunner1);
+        let res = newManager.removeRunner(genRunner1.screenName, genRunner1.roomName);
         if(res === null) expect(false).to.be.true; 
         else{
             expect(res[0]).to.be.false;
@@ -175,7 +175,7 @@ describe("EventManager User Manipulations", () => {
     })
 
     it("Ignores remove on irrelevant runner", () => {
-        let res = newManager.removeRunner(badRunner);
+        let res = newManager.removeRunner(badRunner.screenName, badRunner.roomName);
         expect(res).to.be.null;
         expect(genEvent2.freeRunnerList().length).to.equal(1);
     })
@@ -186,10 +186,10 @@ describe("EventManager Materials and Tasks", () => {
     let newManager = new EventManager();
     newManager.addEvent(genEvent1);
     newManager.addEvent(genEvent2);
-    newManager.removeSupervisor(genSupervisor1);
-    newManager.removeSupervisor(genSupervisor2);
-    newManager.removeRunner(genRunner1);
-    newManager.removeRunner(genRunner2);
+    newManager.removeSupervisor(genSupervisor1.screenName, genSupervisor1.roomName);
+    newManager.removeSupervisor(genSupervisor2.screenName, genSupervisor2.roomName);
+    newManager.removeRunner(genRunner1.screenName, genRunner1.roomName);
+    newManager.removeRunner(genRunner2.screenName, genRunner2.roomName);
     it("Properly adds materials to rooms when valid", () => {
         let res = newManager.addMaterials("ev1", "pencils", 10);
         expect(res).to.be.false;
@@ -230,8 +230,8 @@ describe("EventManager Materials and Tasks", () => {
     })
 
     it("Properly generates task on runner request", () => {
-        newManager.removeRunner(genRunner1);
-        newManager.removeRunner(genRunner2);
+        newManager.removeRunner(genRunner1.screenName, genRunner1.roomName);
+        newManager.removeRunner(genRunner2.screenName, genRunner2.roomName);
         let res = newManager.requestRunner(genAdmin2);
         if(res === null) expect(1).to.equal(0);
         else {
