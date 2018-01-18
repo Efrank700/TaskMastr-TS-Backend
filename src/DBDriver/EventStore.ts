@@ -6,7 +6,7 @@ interface IEvent {
     adminKey: number;
     supervisorKey: number;
     runnerKey: number;
-    owner: admin;
+    owner: {user: string, pass: string, screenName: string, pos: number};
     logins: {user: string, pass: string, screenName: string, pos: number}[];
     materials: {itemName: string, count: number}[];
 }

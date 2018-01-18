@@ -14,7 +14,7 @@ const genRunner: runner = {screenName: "woot", roomName: "hello", task: null, so
 const falseRunner: runner = {screenName: "haha", roomName: "hello", task: null, socketId: 15};
 
 describe('Event Generation', () => {
-    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin, <{itemName: string, count: number}[]>[]);
+    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin.screenName, <{itemName: string, count: number}[]>[]);
     it('should generate a new Event', () => {
         expect(newEvent).to.not.equal(null);
     })
@@ -38,7 +38,7 @@ describe('Event Generation', () => {
 })
 
 describe('Participant Removal', () => {
-    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin, <{itemName: string, count: number}[]>[]);
+    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin.screenName, <{itemName: string, count: number}[]>[]);
     newEvent.addAdmin(secondAdmin);
     newEvent.addSupervisor(genSupervisor);
     newEvent.addRunner(genRunner);
@@ -76,7 +76,7 @@ describe('Participant Removal', () => {
     })
 })
 describe('Material manipulation', () => {
-    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin, <{itemName: string, count: number}[]>[]);
+    const newEvent = new TaskMastrEvent("hello", 100, 101, 102, genAdmin.screenName, <{itemName: string, count: number}[]>[]);
     newEvent.addSupervisor(genSupervisor);
     newEvent.addRunner(genRunner);
     it('can add new materials', () => {
@@ -108,7 +108,7 @@ describe('Material manipulation', () => {
 })
 
 describe("Task Manipulations", () => {
-    let newEvent = new TaskMastrEvent("hello", 100001, 10000, 101010, genAdmin, []);
+    let newEvent = new TaskMastrEvent("hello", 100001, 10000, 101010, genAdmin.screenName, []);
     newEvent.addFreeMaterials("Fun", 25);
     newEvent.addSupervisor(genSupervisor);
     let genTask: task = {supervisor: genSupervisor, runnerRequest: false, recieveLocation: "Here", 

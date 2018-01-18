@@ -6,6 +6,7 @@ import * as mongoose from 'mongoose';
 import {eventStore} from '../DBDriver/EventStore';
 import {keyStore} from '../DBDriver/KeyStore';
 import { participantTypes } from '../Participant';
+import * as bcrypt from 'bcryptjs';
 (<any>mongoose).Promise = Promise;
 
 let genAdmin1: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
@@ -23,17 +24,25 @@ describe('Mongoose Driver tests', () => {
         while(connectPromise.connection !== undefined && connectPromise.connection.readyState == 2);
         eventStore.findOne({eventName: "targetEvent"}).then((res) => {
             if(res === null) {
-                let evToSave = new eventStore({
-                    eventName: "targetEvent", 
-                    adminKey: 1111,
-                    supervisorKey: 1112,
-                    runnerKey: 1113,
-                    owner: {user: "ownerUser", pass: "ownerPass", screenName: "ownerScreen", pos: 0},
-                    logins: [{user: "ownerUser", pass: "ownerPass", screenName: "ownerScreen", pos: 0}],
-                    materials: []
-                });
-                evToSave.save().then((saveRes) => {
-                    done();
+                bcrypt.genSalt(10).then((res) => {
+                    bcrypt.hash("ownerPass", res).then((hashRes) => {
+                        let evToSave = new eventStore({
+                            eventName: "targetEvent", 
+                            adminKey: 1111,
+                            supervisorKey: 1112,
+                            runnerKey: 1113,
+                            owner: {user: "ownerUser", pass: hashRes, screenName: "ownerScreen", pos: 0},
+                            logins: [{user: "ownerUser", pass: hashRes, screenName: "ownerScreen", pos: 0}],
+                            materials: []
+                        });
+                        evToSave.save().then((saveRes) => {
+                            done();
+                        }).catch((err) => {
+                            done(err);
+                        })
+                    }).catch((err) => {
+                        done(err);
+                    })
                 }).catch((err) => {
                     done(err);
                 })
@@ -48,7 +57,7 @@ describe('Mongoose Driver tests', () => {
     after(() => {
         mongoose.disconnect();
     })
-    
+
     it('generates keys', (done) => {
         MongoDriver.generateKeySet().then((numArr) => {
             let first = numArr[0];
@@ -325,6 +334,35 @@ describe('Mongoose Driver tests', () => {
         })
     })
 
+    it('authenticates owner when given proper info', (done) => {
+        MongoDriver.authenticateOwner(1111, "ownerUser", "ownerPass").then((res) => {
+            expect(res[0]).to.be.true;
+            expect(res[1]).to.equal("SUCCESS");
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('fails to authenticate given incorrect user: owner', (done) => {
+        MongoDriver.authenticateOwner(1111, "ownerUser1", "ownerPass").then((res) => {
+            expect(res[0]).to.be.false;
+            expect(res[1]).to.equal("NSUSER");
+            done()
+        }).catch((err) => {
+            done(err);
+        })
+    })
+
+    it('fails to authenticate given incorrect pass: owner', (done) => {
+        MongoDriver.authenticateOwner(1111, "ownerUser", "notPass").then((res) => {
+            expect(res[0]).to.be.false;
+            expect(res[1]).to.equal("IPASS")
+            done();
+        }).catch((err) => {
+            done(err);
+        })
+    })
     it('authenticates when supplied proper info', (done) => {
         MongoDriver.authenticate(1111, "user", "pass").then((res) => {
             if(res === null) {
@@ -392,10 +430,10 @@ describe('Mongoose Driver tests', () => {
         })
     })
 
-    it('can delete user', function(done) {
+    it('can delete admin', function(done) {
         this.retries(2);
         MongoDriver.addUser(1111, "user", "screen", "pass").then((res) => {
-            MongoDriver.deleteUser(1111, "user").then((ev) => {
+            MongoDriver.deleteAdmin(1111, "user").then((ev) => {
                 expect(ev).to.be.true;
                 done()
             }).catch((err) => {
@@ -404,7 +442,7 @@ describe('Mongoose Driver tests', () => {
         }).catch((err) => {
             const castErr = err as Error;
             if(castErr.message === "SUEXISTS") {
-                MongoDriver.deleteUser(1111, "user").then((ev) => {
+                MongoDriver.deleteAdmin(1111, "user").then((ev) => {
                     expect(ev).to.be.true;
                     done()
                 }).catch((err) => {
@@ -416,7 +454,7 @@ describe('Mongoose Driver tests', () => {
     })
 
     it('returns null on delete user for invalid event', (done) => {
-        MongoDriver.deleteUser(-1, "fun").then((res) => {
+        MongoDriver.deleteAdmin(-1, "fun").then((res) => {
             expect(res).to.be.null;
             done();
         }).catch((err) => {
@@ -425,7 +463,7 @@ describe('Mongoose Driver tests', () => {
     })
 
     it('returns false on delete user for invalid user', (done) => {
-        MongoDriver.deleteUser(1111, "fun").then((res) => {
+        MongoDriver.deleteAdmin(1111, "fun").then((res) => {
             expect(res).to.be.false;
             done();
         }).catch((err) => {

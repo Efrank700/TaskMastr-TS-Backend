@@ -5,11 +5,11 @@ import {EventManager} from '../EventManager'
 let genAdmin1: admin = {screenName: "admin1", roomName: "ev1", socketId: 1, tasks: [], location: null};
 let genSupervisor1: supervisor = {screenName: "supervisor1", roomName: "ev1", socketId: 2, tasks: [], location: "home"};
 let genRunner1: runner = {screenName: "runner1", roomName: "ev1", socketId: 3, task: null};
-let genEvent1: TaskMastrEvent = new TaskMastrEvent("ev1", 10000, 10001, 10002, genAdmin1, []);
+let genEvent1: TaskMastrEvent = new TaskMastrEvent("ev1", 10000, 10001, 10002, genAdmin1.screenName, []);
 let genAdmin2: admin = {screenName: "admin2", roomName: "ev2", socketId: 4, tasks: [], location: null};
 let genSupervisor2: supervisor = {screenName: "supervisor2", roomName: "ev2", socketId: 5, tasks: [], location: "home"};
 let genRunner2: runner = {screenName: "runner2", roomName: "ev2", socketId: 6, task: null};
-let genEvent2: TaskMastrEvent = new TaskMastrEvent("ev2", 10003, 10004, 10005, genAdmin2, []);
+let genEvent2: TaskMastrEvent = new TaskMastrEvent("ev2", 10003, 10004, 10005, genAdmin2.screenName, []);
 let badAdmin: admin = {screenName: "admin1", roomName: "", socketId: 1, tasks: [], location: null};
 let badSupervisor: supervisor = {screenName: "supervisor1", roomName: "ev3", socketId: 2, tasks: [], location: "home"};
 let badRunner: runner = {screenName: "runner3", roomName: "not real", socketId: 10, task: null};

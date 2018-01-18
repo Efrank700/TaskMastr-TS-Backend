@@ -90,10 +90,10 @@ export class ActionHandler {
     public async removeAdmin(authorizingUser: string, authorizingPass: string, 
                              targetUser: string, eventKey: number): 
                              Promise<[boolean, admin| null, runner| null] | null> {
-        let authenticatePromise = this.authenticates(authorizingUser, authorizingPass, eventKey);
+        let authenticatePromise = MongoDriver.authenticateOwner(eventKey, authorizingUser, authorizingPass);
         let eventName = this.events.findEventByKey(eventKey);
         let authenticated = await authenticatePromise;
-        if(!authenticated[0] || authenticated[2] !== participantTypes.admin) {
+        if(!authenticated[0]) {
             return null;
         }
         let deletePromise = MongoDriver.deleteUser(eventKey, targetUser);
@@ -111,4 +111,6 @@ export class ActionHandler {
         if(deleteResolution === null) return([false, retAdmin, retRunner]);
         else return([deleteResolution, retAdmin, retRunner]);
     }
+
+    
 }

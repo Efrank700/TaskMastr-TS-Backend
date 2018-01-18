@@ -149,11 +149,48 @@ export class MongoDriver {
         }
     }
 
-    public static async deleteUser(evKey: number, userName: string): Promise<boolean | null> {
+    public static async deleteAdmin(evKey: number, userName: string): Promise<boolean | null> {
         try {
-            let res = await eventStore.findOneAndUpdate({$or: [{adminKey: evKey}, 
-                {supervisorKey: evKey}, {runnerKey: evKey}]}, 
-                {$pull: {logins: {user: userName}}});
+            let res = await eventStore.findOne({adminKey: evKey});
+            if(res === null) return null;
+            else {
+                let position = res.logins.findIndex((target) => {return target.user === userName});
+                if(position === -1) return false;
+                else {
+                    if(res.logins[position].user === res.owner.user) return false;
+                    else {
+                        res.logins.splice(position, 1);
+                        let savePromise = res.save();
+                        await savePromise;
+                        return true;
+                    }
+                }
+            }
+        } catch (error) {
+            const castError = error as Error
+            throw new Error(castError.message);
+        }
+    }
+
+    public static async deleteSupervisor(evKey: number, userName: string): Promise<boolean | null> {
+        try {
+            let res = await eventStore.findOneAndUpdate({adminKey: evKey}, 
+                {$pull: {logins: {user: userName, pos: 1}}});
+            if(res === null) return null;
+            else {
+                let position = res.logins.findIndex((target) => {return target.user === userName});
+                return(position !== -1);
+            }
+        } catch (error) {
+            const castError = error as Error
+            throw new Error(castError.message);
+        }
+    }
+
+    public static async deleteRunner(evKey: number, userName: string): Promise<boolean | null> {
+        try {
+            let res = await eventStore.findOneAndUpdate({adminKey: evKey}, 
+                {$pull: {logins: {user: userName, pos: 2}}});
             if(res === null) return null;
             else {
                 let position = res.logins.findIndex((target) => {return target.user === userName});
@@ -194,7 +231,7 @@ export class MongoDriver {
             let savePromise = evToSave.save();
             owner.roomName = eventName;
             await savePromise;
-            return new TaskMastrEvent(eventName, keys[0], keys[1], keys[2], owner, []);
+            return new TaskMastrEvent(eventName, keys[0], keys[1], keys[2], owner.screenName, []);
         }
         catch (error){
             const castError = error as Error
@@ -211,8 +248,7 @@ export class MongoDriver {
             const evName = res.eventName;
             const keys = [res.adminKey, res.supervisorKey, res.runnerKey];
             const materials = res.materials;
-            const owner = res.owner;
-            return new TaskMastrEvent(evName, keys[0], keys[1], keys[2], owner, materials);
+            return new TaskMastrEvent(evName, keys[0], keys[1], keys[2], res.owner.screenName, materials);
         } catch (error) {
             const castError = error as Error
             throw new Error(castError.message);

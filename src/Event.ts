@@ -42,14 +42,14 @@ export class TaskMastrEvent{
      * @param tasks 
      */
     constructor(eventName: string, adminkey: number, supervisorKey: number, runnerKey: number,
-                owner: admin, materialsAvailable: {itemName: string, count: number}[]) {
+                owner: string, materialsAvailable: {itemName: string, count: number}[]) {
                     this.eventName = eventName;
                     this.adminKey = adminkey;
                     this.supervisorKey = supervisorKey;
                     this.runnerKey = runnerKey;
                     this.taskCount = 0;
                     this.admins =  <admin[]>[this.SUPERADMIN];
-                    this.owner = owner.screenName;
+                    this.owner = owner;
                     this.supervisors =  <supervisor[]>[];
                     this.freeRunners =  <runner[]>[];
                     this.taskedRunners =  <runner[]>[];
