@@ -433,7 +433,7 @@ describe('Mongoose Driver tests', () => {
     it('can delete admin', function(done) {
         this.retries(2);
         MongoDriver.addUser(1111, "user", "screen", "pass").then((res) => {
-            MongoDriver.deleteAdmin(1111, "user").then((ev) => {
+            MongoDriver.deleteAdmin(1111, "screen").then((ev) => {
                 expect(ev).to.be.true;
                 done()
             }).catch((err) => {
@@ -442,7 +442,7 @@ describe('Mongoose Driver tests', () => {
         }).catch((err) => {
             const castErr = err as Error;
             if(castErr.message === "SUEXISTS") {
-                MongoDriver.deleteAdmin(1111, "user").then((ev) => {
+                MongoDriver.deleteAdmin(1111, "screen").then((ev) => {
                     expect(ev).to.be.true;
                     done()
                 }).catch((err) => {

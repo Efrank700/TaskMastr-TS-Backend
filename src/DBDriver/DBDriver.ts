@@ -149,12 +149,12 @@ export class MongoDriver {
         }
     }
 
-    public static async deleteAdmin(evKey: number, userName: string): Promise<boolean | null> {
+    public static async deleteAdmin(evKey: number, screenName: string): Promise<boolean | null> {
         try {
             let res = await eventStore.findOne({adminKey: evKey});
             if(res === null) return null;
             else {
-                let position = res.logins.findIndex((target) => {return target.user === userName});
+                let position = res.logins.findIndex((target) => {return target.screenName === screenName});
                 if(position === -1) return false;
                 else {
                     if(res.logins[position].user === res.owner.user) return false;
@@ -172,13 +172,13 @@ export class MongoDriver {
         }
     }
 
-    public static async deleteSupervisor(evKey: number, userName: string): Promise<boolean | null> {
+    public static async deleteSupervisor(evKey: number, screenName: string): Promise<boolean | null> {
         try {
             let res = await eventStore.findOneAndUpdate({adminKey: evKey}, 
-                {$pull: {logins: {user: userName, pos: 1}}});
+                {$pull: {logins: {screenName: screenName, pos: 1}}});
             if(res === null) return null;
             else {
-                let position = res.logins.findIndex((target) => {return target.user === userName});
+                let position = res.logins.findIndex((target) => {return target.screenName === screenName});
                 return(position !== -1);
             }
         } catch (error) {
@@ -187,13 +187,13 @@ export class MongoDriver {
         }
     }
 
-    public static async deleteRunner(evKey: number, userName: string): Promise<boolean | null> {
+    public static async deleteRunner(evKey: number, screenName: string): Promise<boolean | null> {
         try {
             let res = await eventStore.findOneAndUpdate({adminKey: evKey}, 
-                {$pull: {logins: {user: userName, pos: 2}}});
+                {$pull: {logins: {screenName: screenName, pos: 2}}});
             if(res === null) return null;
             else {
-                let position = res.logins.findIndex((target) => {return target.user === userName});
+                let position = res.logins.findIndex((target) => {return target.screenName === screenName});
                 return(position !== -1);
             }
         } catch (error) {

@@ -88,7 +88,7 @@ export class ActionHandler {
     }
 
     public async removeAdmin(authorizingUser: string, authorizingPass: string, 
-                             targetUser: string, eventKey: number): 
+                             targetScreen: string, eventKey: number): 
                              Promise<[boolean, admin| null, runner| null] | null> {
         let authenticatePromise = MongoDriver.authenticateOwner(eventKey, authorizingUser, authorizingPass);
         let eventName = this.events.findEventByKey(eventKey);
@@ -96,10 +96,10 @@ export class ActionHandler {
         if(!authenticated[0]) {
             return null;
         }
-        let deletePromise = MongoDriver.deleteUser(eventKey, targetUser);
+        let deletePromise = MongoDriver.deleteAdmin(eventKey, targetScreen);
         let delAdmin: [admin | null, runner | null] | null = null;
         if(eventName !== null) {
-            delAdmin = this.events.removeAdmin(targetUser, eventName);
+            delAdmin = this.events.removeAdmin(targetScreen, eventName);
         }
         let retAdmin: admin|null = null;
         let retRunner: runner|null = null;
@@ -112,5 +112,43 @@ export class ActionHandler {
         else return([deleteResolution, retAdmin, retRunner]);
     }
 
-    
+    public async removeSupervisor(authorizingUser: string, authorizingPass: string, 
+        targetScreen: string, eventKey: number) : Promise<[boolean, supervisor| null, runner| null] | null> {
+        let authenticatePromise = MongoDriver.authenticate(eventKey, authorizingUser, authorizingPass);
+        let eventName = this.events.findEventByKey(eventKey);
+        let authenticated = await authenticatePromise;
+        if(!authenticated[0] || authenticated[2] != participantTypes.admin) return null;
+        let deletePromise = MongoDriver.deleteSupervisor(eventKey, targetScreen);
+        let delSupervisor: [supervisor | null, runner | null] | null = null;
+        if(eventName !== null) delSupervisor = this.events.removeSupervisor(targetScreen, eventName);
+        let retSupervisor: supervisor|null = null;
+        let retRunner: runner|null = null;
+        if(delSupervisor !== null) {
+            retSupervisor = delSupervisor[0];
+            retRunner = delSupervisor[1];
+        }
+        let deleteResolution = await deletePromise;
+        if(deleteResolution === null) return([false, retSupervisor, retRunner]);
+        else return([deleteResolution, retSupervisor, retRunner]);
+    }
+
+    public async removeRunner(authorizingUser: string, authorizingPass: string, 
+        targetScreen: string, eventKey: number) : Promise<[boolean, runner| null, task| null] | null> {
+            let authenticatePromise = MongoDriver.authenticate(eventKey, authorizingUser, authorizingPass);
+            let eventName = this.events.findEventByKey(eventKey);
+            let authenticated = await authenticatePromise;
+            if(!authenticated[0] || authenticated[2] != participantTypes.admin) return null;
+            let deletePromise = MongoDriver.deleteRunner(eventKey, targetScreen);
+            let delRunner: [boolean, runner | null, task | null] | null = null;
+            if(eventName !== null) delRunner = this.events.removeRunner(targetScreen, eventName);
+            let retRunner: runner|null = null;
+            let retTask: task|null = null;
+            if(delRunner !== null) {
+                retRunner = delRunner[1];
+                retTask = delRunner[2];
+            }
+            let deleteResolution = await deletePromise;
+            if(deleteResolution === null) return([false, retRunner, retTask]);
+            else return([deleteResolution, retRunner, retTask]);
+        }
 }
