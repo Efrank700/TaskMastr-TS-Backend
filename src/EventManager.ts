@@ -136,7 +136,7 @@ export class EventManager{
         }
     }
 
-    getFreeMaterials(roomName: string) : {itemName: string, count: number, user: 
+    getUsedMaterials(roomName: string) : {itemName: string, count: number, user: 
         admin | supervisor}[] | null {
         let event = this.getEventByName(roomName);
         if (event === null || event === undefined) return null;
