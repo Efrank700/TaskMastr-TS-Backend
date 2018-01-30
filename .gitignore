@@ -31,3 +31,5 @@ dist/
 .vs/
 .vscode/
 ormconfig\.json
+
+\.idea/

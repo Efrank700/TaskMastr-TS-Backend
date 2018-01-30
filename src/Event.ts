@@ -29,17 +29,9 @@ export class TaskMastrEvent{
      * @param eventName 
      * @param adminkey 
      * @param supervisorKey 
-     * @param runnerKey 
-     * @param administrator 
+     * @param runnerKey
      * @param owner 
-     * @param taskCount 
-     * @param admins 
-     * @param supervisors 
-     * @param freeRunners 
-     * @param taskedRunners 
-     * @param materialsAvailable 
-     * @param materialsInUse 
-     * @param tasks 
+     * @param materialsAvailable
      */
     constructor(eventName: string, adminkey: number, supervisorKey: number, runnerKey: number,
                 owner: string, materialsAvailable: {itemName: string, count: number}[]) {
@@ -53,7 +45,7 @@ export class TaskMastrEvent{
                     this.supervisors =  <supervisor[]>[];
                     this.freeRunners =  <runner[]>[];
                     this.taskedRunners =  <runner[]>[];
-                    this.materialsAvailable =  <{itemName: string, count: number}[]>[];
+                    this.materialsAvailable =  materialsAvailable;
                     this.materialsInUse =  <{itemName: string, count: number, user: 
                                             admin | supervisor}[]>[];
                     this.unfinishedTasks = <{assigned: runner | null, task:task}[]>[];
@@ -151,10 +143,10 @@ export class TaskMastrEvent{
         const ret = <{assigned: runner | null, task:task}[]>[];
         this.unfinishedTasks.forEach(element => {
             ret.push(element);
-        })
+        });
         this.waitingTasks.forEach(element => {
             ret.push({assigned: null, task: element.task});
-        })
+        });
         return(ret);
     }
 
@@ -190,7 +182,7 @@ export class TaskMastrEvent{
             if(this.waitingTasks.length !== 0) {
                 runner.task = this.waitingTasks[0].task;
                 let removedTask = this.waitingTasks.splice(0, 1);
-                this.unfinishedTasks.push({assigned: runner, task: removedTask[0].task})
+                this.unfinishedTasks.push({assigned: runner, task: removedTask[0].task});
                 helper.uniqueInsert(runner, this.taskedRunners);
                 return(runner);
             }
@@ -244,7 +236,7 @@ export class TaskMastrEvent{
      }
 
          /**
-     * @param screenName
+     * @param socketId
      * @returns admin target Admin 
      */
      getAdminBySocket(socketId: number) : admin | null{
@@ -254,7 +246,7 @@ export class TaskMastrEvent{
     }
 
     /**
-     * @param screenName
+     * @param socketId
      * @returns supervisor target supervisor 
      */
      getSupervisorBySocket(socketId: number) : supervisor | null{
@@ -264,7 +256,7 @@ export class TaskMastrEvent{
     }
 
     /**
-     *@param screenName
+     *@param socketId
      *@return runner target runner 
      */
       getRunnerBySocket(socketId: number) : runner | null{
@@ -374,7 +366,7 @@ export class TaskMastrEvent{
     }
 
     removeFreeMaterials(name: string, quantity: number): number{
-        if(quantity <= 0) return(-1)
+        if(quantity <= 0) return(-1);
         let position = this.materialsAvailable.findIndex((element) => {
             return(element.itemName === name);
         });
@@ -412,12 +404,12 @@ export class TaskMastrEvent{
     }
     
     returnMaterials(name: string, quantity: number, supervisor: admin | supervisor) : [boolean, number, admin | supervisor] {
-        if(quantity <= 0) return([false, -1, supervisor])
+        if(quantity <= 0) return([false, -1, supervisor]);
         if(supervisor.roomName !== this.eventName) return([false, -1, supervisor]);
         else {
             let supervisorMats = this.materialsInUse.findIndex((element) => {
                 return(element.itemName === name && element.user === supervisor)
-            })
+            });
             if(supervisorMats === -1) return([false, -1, supervisor]);
             let takenAmount = this.materialsInUse[supervisorMats].count;
             if(takenAmount < quantity) return([false, takenAmount, supervisor]);

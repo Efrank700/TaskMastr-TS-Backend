@@ -41,7 +41,7 @@ export class ActionHandler {
                     }
                     else return null;
                 }
-                let targetEvent = this.events.findEventByKey(eventKey)
+                let targetEvent = this.events.findEventByKey(eventKey);
                 if(targetEvent === null) return null;
                 if(findEV === participantTypes.admin) {
                     let adminLocation = location === undefined ? null : location;
@@ -79,7 +79,7 @@ export class ActionHandler {
         }
     }
 
-    public async authenticates(user: string, pass: string, eventKey: number): Promise<[boolean, string, participantTypes]> {
+    public static async authenticates(user: string, pass: string, eventKey: number): Promise<[boolean, string, participantTypes]> {
         try {
             return MongoDriver.authenticate(eventKey, user, pass);
         } catch (error) {
@@ -114,7 +114,7 @@ export class ActionHandler {
             else return([deleteResolution, retAdmin, retRunner]);
         } catch (error) {
             let castError = error as Error;
-            throw error;
+            throw new Error(castError.message);
         }
     }
 
@@ -139,7 +139,7 @@ export class ActionHandler {
             else return([deleteResolution, retSupervisor, retRunner]);
         } catch (error) {
             let castError = error as Error;
-            throw error;
+            throw new Error(castError.message);
         }
     }
 
@@ -164,7 +164,7 @@ export class ActionHandler {
             else return([deleteResolution, retRunner, retTask]);
         } catch (error) {
             let castError = error as Error;
-            throw error;
+            throw new Error(castError.message);
         }
     }
 
@@ -187,68 +187,79 @@ export class ActionHandler {
             }
         } catch (error) {
             let castError = error as Error;
-            throw error;
+            throw new Error(castError.message);
         }
     }
 
     public async removeMaterials(eventKey: number, materialName: string, quantity: number):
     Promise<[boolean | null, boolean | null]> {
-        if(quantity <= 0) return [null, null];
-        else{
-            let removalPromise = MongoDriver.removeMaterials(eventKey, materialName, quantity);
-            let eventName = this.events.findEventByKey(eventKey);
-            if(eventName !== null) {
-                let addition = this.events.removeFreeMaterials(eventName, materialName, quantity);
-                let DBremoval = await removalPromise;
-                if(DBremoval === null) return [null, null];
-                return([DBremoval, addition])
+        try {
+            if(quantity <= 0) return [null, null];
+            else{
+                let removalPromise = MongoDriver.removeMaterials(eventKey, materialName, quantity);
+                let eventName = this.events.findEventByKey(eventKey);
+                if(eventName !== null) {
+                    let addition = this.events.removeFreeMaterials(eventName, materialName, quantity);
+                    let DBremoval = await removalPromise;
+                    if(DBremoval === null) return [null, null];
+                    return([DBremoval, addition])
+                }
+                else {
+                    return([await removalPromise, null]);
+                }
             }
-            else {
-                return([await removalPromise, null]);
-            }
+        } catch (error) {
+            let castError = error as Error;
+            throw new Error(castError.message);
         }
     }
 
     public async logUserIn(eventKey: number, user: string, pass: string, socketId: number, location?: string): Promise<[boolean, string, string | null] | null> {
-        let loginPromise = MongoDriver.authenticate(eventKey, user, pass);
-        let eventName = this.events.findEventByKey(eventKey);
-        let login = await loginPromise;
-        if(login === null) return null;
-        else if(!login[0]) {
-            return([login[0], login[1], null]);
-        }
-        else {
-            if(eventName === null) {
-                let targetEvent = await MongoDriver.retrieveEvent(eventKey);
-                if(targetEvent === null) return null;
-                this.events.addEvent(targetEvent);
-                eventName = targetEvent.$eventName;
-            }
-            if(login[2] === participantTypes.admin) {
-                let targetLocation: string | null;
-                if(location === undefined) targetLocation = null;
-                else targetLocation = location;
-                let adminToAdd: admin = {screenName: login[1],roomName:eventName, location: targetLocation, tasks: [], socketId: socketId};
-                let adminAdded = this.events.addAdmin(adminToAdd);
-                return([adminToAdd !== null, login[1], eventName]);
-            }
-            else if(login[2] === participantTypes.supervisor) {
-                let targetLocation: string;
-                if(location === undefined) targetLocation = "UNKNOWN";
-                else targetLocation = location;
-                let supervisorToAdd: supervisor = {screenName: login[1],roomName:eventName, location: targetLocation, tasks: [], socketId: socketId};
-                let supervisorAdded = this.events.addSupervisor(supervisorToAdd);
-                return([supervisorToAdd !== null, login[1], eventName]);
+        try{
+            let loginPromise = MongoDriver.authenticate(eventKey, user, pass);
+            let eventName = this.events.findEventByKey(eventKey);
+            let login = await loginPromise;
+            if(login === null) return null;
+            else if(!login[0]) {
+                return([login[0], login[1], null]);
             }
             else {
-                let runnerToAdd: runner = {screenName: login[1],roomName:eventName, task: null, socketId: socketId};
-                let runnerAdded = this.events.addRunner(runnerToAdd);
-                return([runnerToAdd !== null, login[1], eventName]);
+                if(eventName === null) {
+                    let targetEvent = await MongoDriver.retrieveEvent(eventKey);
+                    if(targetEvent === null) return null;
+                    this.events.addEvent(targetEvent);
+                    eventName = targetEvent.$eventName;
+                }
+                if(login[2] === participantTypes.admin) {
+                    let targetLocation: string | null;
+                    if(location === undefined) targetLocation = null;
+                    else targetLocation = location;
+                    let adminToAdd: admin = {screenName: login[1],roomName:eventName, location: targetLocation, tasks: [], socketId: socketId};
+                    let adminAdded = this.events.addAdmin(adminToAdd);
+                    return([adminToAdd !== null, login[1], eventName]);
+                }
+                else if(login[2] === participantTypes.supervisor) {
+                    let targetLocation: string;
+                    if(location === undefined) targetLocation = "UNKNOWN";
+                    else targetLocation = location;
+                    let supervisorToAdd: supervisor = {screenName: login[1],roomName:eventName, location: targetLocation, tasks: [], socketId: socketId};
+                    let supervisorAdded = this.events.addSupervisor(supervisorToAdd);
+                    return([supervisorToAdd !== null, login[1], eventName]);
+                }
+                else {
+                    let runnerToAdd: runner = {screenName: login[1],roomName:eventName, task: null, socketId: socketId};
+                    let runnerAdded = this.events.addRunner(runnerToAdd);
+                    return([runnerToAdd !== null, login[1], eventName]);
+                }
             }
+        } catch (error) {
+            let castError = error as Error;
+            throw new Error(castError.message);
         }
     }
 
-    public async logUserOut(eventName: string, screenName: string): Promise<[admin | null, supervisor | null, runner | null, task | null] | null> {
+    public async logUserOut(eventName: string, screenName: string): 
+    Promise<[admin | null, supervisor | null, runner | null, task | null] | null> {
         let removeAdmin = this.events.removeAdmin(screenName, eventName);
         let removeSupervisor = this.events.removeSupervisor(screenName, eventName);
         let removeRunner = this.events.removeRunner(screenName, eventName);
@@ -265,5 +276,37 @@ export class ActionHandler {
             }
             else return[null, null, null, null];
         }
+    }
+
+    public getMaterials(eventKey: number): [{itemName: string, count: number, user: 
+    admin | supervisor}[], {itemName: string, count: number}[]] | null {
+        let eventName = this.events.findEventByKey(eventKey);
+        if(eventName === null) return null;
+        else {
+            let retFreeMaterials = this.events.getMaterialsAvailable(eventName);
+            let retUsedMaterials = this.events.getUsedMaterials(eventName);
+            if(retFreeMaterials === null || retUsedMaterials === null) return null;
+            else return[retUsedMaterials, retFreeMaterials];
+        }
+    }
+
+    public getUsersLoggedIn(eventKey: number): [string[], string[], string[], string[]] | null {
+        let eventName = this.events.findEventByKey(eventKey);
+        if(eventName === null) return null;
+        let admins = this.events.adminList(eventName);
+        let supervisors = this.events.supervisorList(eventName);
+        let freeRunners = this.events.freeRunnerList(eventName);
+        let taskedRunners = this.events.taskedRunnerList(eventName);
+        if(admins === null || supervisors === null 
+            || freeRunners === null || taskedRunners === null) return null;
+        let adminNames = admins.map((admin) => {return admin.screenName});
+        let supervisorNames = supervisors.map((supervisor) => {return supervisor.screenName});
+        let freeRunnerNames = freeRunners.map((runner) => {return runner.screenName});
+        let taskedRunnerNames = taskedRunners.map((runner) => {return runner.screenName});
+        return([adminNames, supervisorNames, freeRunnerNames, taskedRunnerNames]);
+    }
+    
+    public getCurrentTasks(eventKey: number) : task[] | null {
+
     }
 }

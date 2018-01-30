@@ -35,7 +35,7 @@ export class EventManager{
             return (target.$adminKey === evKey 
                     || target.$supervisorKey === evKey 
                     || target.$runnerKey === evKey)
-        })
+        });
         if(index === -1) return null;
         else return this.eventList[index].$eventName;
     }
@@ -50,7 +50,7 @@ export class EventManager{
             return (target.$adminKey === evKey 
                     || target.$supervisorKey === evKey 
                     || target.$runnerKey === evKey)
-        })
+        });
         return index !== -1;
     }
 
@@ -77,7 +77,7 @@ export class EventManager{
         return(null);
     }
 
-    isEmpty(targetEvent: TaskMastrEvent) : boolean {
+    static isEmpty(targetEvent: TaskMastrEvent) : boolean {
         return(targetEvent.adminList().length +
             targetEvent.supervisorList().length +
             targetEvent.freeRunnerList().length +
@@ -241,7 +241,7 @@ export class EventManager{
         const room = this.getEventByName(roomName);
         if (room === null || room === undefined) return(null);
         let targetRunner = room.getRunnerByScreenName(target);
-        if(targetRunner === null) return null
+        if(targetRunner === null) return null;
         const task = targetRunner.task;
         const res = room.removeRunner(targetRunner);
         return([res[0], res[1], task]);

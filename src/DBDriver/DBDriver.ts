@@ -1,7 +1,7 @@
 import * as mongoose from "mongoose";
 import {eventStore} from './EventStore';
 import {keyStore} from './KeyStore';
-import {participantTypes, admin, supervisor, runner, participant} from '../Participant';
+import {participantTypes, admin} from '../Participant';
 import {TaskMastrEvent} from '../Event';
 import * as bcrypt from "bcryptjs";
 (<any>mongoose).Promise = Promise;
@@ -20,7 +20,7 @@ export class MongoDriver {
             toStore.save();
             return num;
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -35,7 +35,7 @@ export class MongoDriver {
             let thirdResult = await thirdResultPromise;
             return [firstResult, secondResult, thirdResult];
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -50,7 +50,7 @@ export class MongoDriver {
             if(res === null) return null;
             return(res.logins.findIndex((target) => {return target.user === userName}) === -1);
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -65,7 +65,7 @@ export class MongoDriver {
             if(res === null) return null;
             return(res.logins.findIndex((target) => {return target.screenName === screenName}) === -1);
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -73,7 +73,7 @@ export class MongoDriver {
     public static async addUser(evKey: number, userName: string, userScreen: string, 
                                 userPass: string): Promise<participantTypes | null> {
         try {
-            let saltPromise = bcrypt.genSalt(10)
+            let saltPromise = bcrypt.genSalt(10);
             let res = await eventStore.findOne().or([
                 {adminKey: evKey}, 
                 {supervisorKey: evKey}, 
@@ -97,7 +97,7 @@ export class MongoDriver {
             await result;
             return retVal;
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -144,7 +144,7 @@ export class MongoDriver {
             if(!(await passMatchPromise)) return([false, "IPASS", participantTypes.admin]);
             return([true, targetUser.screenName, participantType]);
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -167,7 +167,7 @@ export class MongoDriver {
                 }
             }
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -182,7 +182,7 @@ export class MongoDriver {
                 return(position !== -1);
             }
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -197,17 +197,17 @@ export class MongoDriver {
                 return(position !== -1);
             }
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
 
     public static async eventNameAvailable(eventName: string): Promise<boolean> {
         try {
-            let res = await eventStore.findOne({eventName: eventName})
+            let res = await eventStore.findOne({eventName: eventName});
             return res === null;
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -220,21 +220,21 @@ export class MongoDriver {
             if(nameExists) return null;
             let keys = await keysPromise;
             let evToSave = new eventStore({
-                eventName: eventName, 
+                eventName: eventName,
                 adminKey: keys[0],
                 supervisorKey: keys[1],
                 runnerKey: keys[2],
                 owner: {user: ownerUser, pass: ownerPass, screenName: owner.screenName, pos: 0},
                 logins: [{user: ownerUser, pass: ownerPass, screenName: owner.screenName, pos: 0}],
                 materials: []
-            })
+            });
             let savePromise = evToSave.save();
             owner.roomName = eventName;
             await savePromise;
             return new TaskMastrEvent(eventName, keys[0], keys[1], keys[2], owner.screenName, []);
         }
         catch (error){
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -250,7 +250,7 @@ export class MongoDriver {
             const materials = res.materials;
             return new TaskMastrEvent(evName, keys[0], keys[1], keys[2], res.owner.screenName, materials);
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -270,7 +270,7 @@ export class MongoDriver {
     
     public static async deleteEventByAdminID(eventIdentifier: number): Promise<boolean> {
         try {
-            let targetEvent = await eventStore.findOne({adminKey: eventIdentifier})
+            let targetEvent = await eventStore.findOne({adminKey: eventIdentifier});
             if(targetEvent === null)return false;
             let delResponse = await eventStore.findOneAndRemove({adminKey: eventIdentifier});
             if(delResponse === null) return false;
@@ -294,7 +294,7 @@ export class MongoDriver {
             let materials = res.materials;
             const targetIndex = materials.findIndex((target) => {
                 return target.itemName === materialName
-            })
+            });
             if(targetIndex !== -1) {
                 res.materials[targetIndex].count += quantity;
                 await res.save();
@@ -306,7 +306,7 @@ export class MongoDriver {
                 return false;
             }
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
@@ -321,7 +321,7 @@ export class MongoDriver {
             let materials = res.materials;
             const targetIndex = materials.findIndex((target) => {
                 return target.itemName === materialName
-            })
+            });
             if(targetIndex === -1) {
                return false;
             }
@@ -336,7 +336,7 @@ export class MongoDriver {
                 }
             }
         } catch (error) {
-            const castError = error as Error
+            const castError = error as Error;
             throw new Error(castError.message);
         }
     }
