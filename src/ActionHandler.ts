@@ -1,17 +1,60 @@
 import {MongoDriver} from "./DBDriver/DBDriver";
-import * as mongoose from 'mongoose';
 import {EventManager} from "./EventManager";
 import {TaskMastrEvent, admin, supervisor, runner, task, participant} from "./Event";
 import {participantTypes} from "./Participant";
 
-mongoose.connection.on('error', console.error.bind(console, "MONGO ERROR"));
 export class ActionHandler {
     
     private events: EventManager;
+    private manager: MongoDriver;
     constructor() {
         this.events = new EventManager();
-        let connectPromise = mongoose.connect('mongodb://127.0.0.1:27017', {useMongoClient: true});
-        while(connectPromise.connection !== undefined && connectPromise.connection.readyState == 2);
+        this.manager = new MongoDriver();
+    }
+
+    public async addEvent(eventName: string, ownerUser: string, ownerPass: string, ownerScreen: string, ownerSocket: number, ownerLocation: string):
+    Promise<[boolean, TaskMastrEvent | null] | null> {
+        try {
+            let tempAdmin:admin =  {screenName: ownerScreen, socketId: ownerSocket, location: ownerLocation, roomName: "irrelevant", tasks: []}
+            let available = await MongoDriver.eventNameAvailable(eventName);
+            if(!available) return[false, null];
+            let eventCreated = await MongoDriver.createEvent(eventName, tempAdmin, ownerUser, ownerPass);
+            if(eventCreated === null) return null;
+            let retEvent = this.events.addEvent(eventCreated);
+            return [true, retEvent];
+        } catch (error) {
+            let castError = error as Error
+            throw new Error(castError.message);
+        }
+    }
+
+    public removeEvent(eventName: string): TaskMastrEvent | null {
+        let targetEvent = this.events.findEventByName(eventName);
+        if(targetEvent === null) return null;
+        let event = this.events.removeEvent(targetEvent);
+        return event;
+    }
+
+    public async deleteEvent(eventKey: number, authUser: string, authPass: string): 
+    Promise<[boolean, TaskMastrEvent | null] | null> {
+        try {
+            let authenticated = await MongoDriver.authenticateOwner(eventKey, authUser, authPass);
+        if(!authenticated) return null;
+        let deleteEventPromise = MongoDriver.deleteEventByAdminID(eventKey);
+        let targetEventName = this.events.findEventByKey(eventKey);
+        let remEvent: TaskMastrEvent | null = null;
+        if(targetEventName !== null) {
+            let targetEvent = this.events.findEventByName(targetEventName);
+            if(targetEvent !== null) {
+                remEvent = this.events.removeEvent(targetEvent);
+            }
+        }
+        let deleteEvent = await deleteEventPromise;
+        return [deleteEvent, remEvent];
+        } catch (error) {
+            let castError = error as Error;
+            throw new Error(castError.message);
+        }
     }
 
     public async addUserToEvent(user: string, screen: string, pass: string, socket: number,  
@@ -79,7 +122,7 @@ export class ActionHandler {
         }
     }
 
-    public static async authenticates(user: string, pass: string, eventKey: number): Promise<[boolean, string, participantTypes]> {
+    public async authenticates(user: string, pass: string, eventKey: number): Promise<[boolean, string, participantTypes]> {
         try {
             return MongoDriver.authenticate(eventKey, user, pass);
         } catch (error) {
@@ -88,7 +131,7 @@ export class ActionHandler {
         }
     }
 
-    public async removeAdmin(authorizingUser: string, authorizingPass: string, 
+    public async kickAdmin(authorizingUser: string, authorizingPass: string, 
                              targetScreen: string, eventKey: number): 
                              Promise<[boolean, admin| null, runner| null] | null> {
         try {
@@ -118,7 +161,7 @@ export class ActionHandler {
         }
     }
 
-    public async removeSupervisor(authorizingUser: string, authorizingPass: string, 
+    public async kickSupervisor(authorizingUser: string, authorizingPass: string, 
         targetScreen: string, eventKey: number) : Promise<[boolean, supervisor| null, runner| null] | null> {
         try {
             let authenticatePromise = MongoDriver.authenticate(eventKey, authorizingUser, authorizingPass);
@@ -143,7 +186,7 @@ export class ActionHandler {
         }
     }
 
-    public async removeRunner(authorizingUser: string, authorizingPass: string, 
+    public async kickRunner(authorizingUser: string, authorizingPass: string, 
         targetScreen: string, eventKey: number) : Promise<[boolean, runner| null, task| null] | null> {
         try {
             let authenticatePromise = MongoDriver.authenticate(eventKey, authorizingUser, authorizingPass);
@@ -306,7 +349,30 @@ export class ActionHandler {
         return([adminNames, supervisorNames, freeRunnerNames, taskedRunnerNames]);
     }
     
-    public getCurrentTasks(eventKey: number) : task[] | null {
+    public getCurrentTasks(eventKey: number) : {assigned: runner | null,task: task}[] | null {
+        let targetEventName = this.events.findEventByKey(eventKey);
+        if(targetEventName === null) return null;
+        let targetEvent = this.events.findEventByName(targetEventName);
+        if(targetEvent === null) return null
+        return targetEvent.taskList();
+    }
 
+    public addTask(eventName: string, requesterScreenName: string, userRequest: boolean, 
+    materialName?: string, quantity?: number):
+    [boolean, task | null, runner | null] | null {
+        if(!userRequest && (materialName === undefined || quantity === undefined)) return null;
+        else if(materialName !== undefined && quantity === undefined) return null;
+        else if(materialName === undefined && quantity !== undefined) return null;
+        else if(materialName !== undefined && quantity !== undefined) {
+            if(userRequest) {
+                return this.events.requestMaterialAndRunner(eventName, requesterScreenName, materialName, quantity);
+            }
+            else {
+                return this.events.requestMaterial(eventName, requesterScreenName, materialName, quantity);
+            }
+        }
+        else {
+            return this.events.requestRunner(eventName, requesterScreenName)
+        }
     }
 }

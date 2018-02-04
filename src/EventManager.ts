@@ -266,10 +266,13 @@ export class EventManager{
          return(room.removeFreeMaterials(materialName, quantity) > 0);
      }
 
-     requestRunner(requester: admin | supervisor) :
+     requestRunner(eventName: string, requesterScreenName: string) :
       [boolean, task | null, runner | null] | null{
-        let room = this.getEventByName(requester.roomName);
+        let room = this.getEventByName(eventName);
         if(room == null) return(null);
+        let requester = room.getAdminByScreenName(requesterScreenName);
+        if(requester === null) requester = room.getSupervisorByScreenName(requesterScreenName);
+        if(requester === null) return null;
         let depLocation : string = requester.location != null ? requester.location : 
         `UNKNOWN: LOCATION OF ${requester.screenName} -- CONTACT ADMINISTRATOR`;
         let reqTask : task = {supervisor: requester, runnerRequest: true, recieveLocation: "YOUR LOCATION", depositLocation: depLocation};
@@ -277,16 +280,36 @@ export class EventManager{
          return([res[0], res[1], res[2]]);
      }
 
-     requestMaterial(requester: admin | supervisor, material: string, quantity: number) : [boolean, task | null, runner | null] | null{
-        let room = this.getEventByName(requester.roomName);
+     requestMaterial(eventName: string, requesterScreenName: string, material: string, quantity: number) : [boolean, task | null, runner | null] | null{
+        let room = this.getEventByName(eventName);
         if(room == null) return null;
         let possible = room.requestValid(material, quantity);
         if(!possible) return([false, null, null]);
+        let requester = room.getAdminByScreenName(requesterScreenName);
+        if(requester === null) requester = room.getSupervisorByScreenName(requesterScreenName);
+        if(requester === null) return null;
         let checkoutRes = room.checkoutMaterials(material, quantity, requester);
         if(!checkoutRes[0]) return([false, null, null]);
         let depLocation : string = requester.location != null ? requester.location : 
         `UNKNOWN: LOCATION OF ${requester.screenName} -- CONTACT ADMINISTRATOR`;
         let reqTask : task = {supervisor: requester, runnerRequest: false, recieveLocation: "HOME BASE", depositLocation: depLocation, item: material, quantity: quantity};
+        let res = room.addTask(reqTask);
+         return([res[0], res[1], res[2]]);
+     }
+
+     requestMaterialAndRunner(eventName: string, requesterScreenName: string, material: string, quantity: number): [boolean, task | null, runner | null] | null {
+        let room = this.getEventByName(eventName);
+        if(room == null) return null;
+        let possible = room.requestValid(material, quantity);
+        if(!possible) return([false, null, null]);
+        let requester = room.getAdminByScreenName(requesterScreenName);
+        if(requester === null) requester = room.getSupervisorByScreenName(requesterScreenName);
+        if(requester === null) return null;
+        let checkoutRes = room.checkoutMaterials(material, quantity, requester);
+        if(!checkoutRes[0]) return([false, null, null]);
+        let depLocation : string = requester.location != null ? requester.location : 
+        `UNKNOWN: LOCATION OF ${requester.screenName} -- CONTACT ADMINISTRATOR`;
+        let reqTask : task = {supervisor: requester, runnerRequest: true, recieveLocation: "HOME BASE", depositLocation: depLocation, item: material, quantity: quantity};
         let res = room.addTask(reqTask);
          return([res[0], res[1], res[2]]);
      }

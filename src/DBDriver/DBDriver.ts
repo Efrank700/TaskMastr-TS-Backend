@@ -6,7 +6,13 @@ import {TaskMastrEvent} from '../Event';
 import * as bcrypt from "bcryptjs";
 (<any>mongoose).Promise = Promise;
 
+mongoose.connection.on('error', console.error.bind(console, "MONGO ERROR"));
 export class MongoDriver {
+
+    constructor() {
+        let connectPromise = mongoose.connect('mongodb://127.0.0.1:27017', {useMongoClient: true});
+        while(connectPromise.connection !== undefined && connectPromise.connection.readyState == 2);
+    }
 
     private static async generateKey(): Promise<number> {
         try {

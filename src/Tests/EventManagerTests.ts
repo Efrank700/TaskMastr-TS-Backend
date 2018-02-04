@@ -208,7 +208,7 @@ describe("EventManager Materials and Tasks", () => {
     it("Properly generates task on material request", () => {
         newManager.addAdmin(genAdmin1);
         newManager.addAdmin(genAdmin2);
-        let res = newManager.requestMaterial(genAdmin1, "pencils", 5);
+        let res = newManager.requestMaterial(genAdmin1.roomName, genAdmin1.screenName, "pencils", 5);
         if(res === null) expect(0).to.equal(1);
         else {
             let task = res[1];
@@ -232,7 +232,7 @@ describe("EventManager Materials and Tasks", () => {
     it("Properly generates task on runner request", () => {
         newManager.removeRunner(genRunner1.screenName, genRunner1.roomName);
         newManager.removeRunner(genRunner2.screenName, genRunner2.roomName);
-        let res = newManager.requestRunner(genAdmin2);
+        let res = newManager.requestRunner(genAdmin2.roomName, genAdmin2.screenName);
         if(res === null) expect(1).to.equal(0);
         else {
             let task = res[1];

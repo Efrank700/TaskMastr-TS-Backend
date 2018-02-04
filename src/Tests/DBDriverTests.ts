@@ -18,10 +18,9 @@ let genAdmin6: admin = {screenName: 'hi', roomName: 'eventName', location: null,
 let genAdmin7: admin = {screenName: 'hi', roomName: 'eventName', location: null, tasks: [], socketId: 1};
 
 describe('Mongoose Driver tests', () => {
-    let connectPromise: mongoose.MongooseThenable;
+    let driver: MongoDriver;
     before((done) => {
-        connectPromise = mongoose.connect('mongodb://127.0.0.1:27017', {useMongoClient: true});
-        while(connectPromise.connection !== undefined && connectPromise.connection.readyState == 2);
+        driver = new MongoDriver();
         eventStore.findOne({eventName: "targetEvent"}).then((res) => {
             if(res === null) {
                 bcrypt.genSalt(10).then((res) => {
