@@ -29,9 +29,7 @@ export class ActionHandler {
     }
 
     public removeEvent(eventName: string): TaskMastrEvent | null {
-        let targetEvent = this.events.findEventByName(eventName);
-        if(targetEvent === null) return null;
-        let event = this.events.removeEvent(targetEvent);
+        let event = this.events.removeEvent(eventName);
         return event;
     }
 
@@ -44,10 +42,7 @@ export class ActionHandler {
         let targetEventName = this.events.findEventByKey(eventKey);
         let remEvent: TaskMastrEvent | null = null;
         if(targetEventName !== null) {
-            let targetEvent = this.events.findEventByName(targetEventName);
-            if(targetEvent !== null) {
-                remEvent = this.events.removeEvent(targetEvent);
-            }
+            remEvent = this.events.removeEvent(targetEventName);
         }
         let deleteEvent = await deleteEventPromise;
         return [deleteEvent, remEvent];
@@ -321,21 +316,15 @@ export class ActionHandler {
         }
     }
 
-    public getMaterials(eventKey: number): [{itemName: string, count: number, user: 
+    public getMaterials(eventName: string): [{itemName: string, count: number, user: 
     admin | supervisor}[], {itemName: string, count: number}[]] | null {
-        let eventName = this.events.findEventByKey(eventKey);
-        if(eventName === null) return null;
-        else {
-            let retFreeMaterials = this.events.getMaterialsAvailable(eventName);
-            let retUsedMaterials = this.events.getUsedMaterials(eventName);
-            if(retFreeMaterials === null || retUsedMaterials === null) return null;
-            else return[retUsedMaterials, retFreeMaterials];
-        }
+        let retFreeMaterials = this.events.getMaterialsAvailable(eventName);
+        let retUsedMaterials = this.events.getUsedMaterials(eventName);
+        if(retFreeMaterials === null || retUsedMaterials === null) return null;
+        else return[retUsedMaterials, retFreeMaterials];
     }
 
-    public getUsersLoggedIn(eventKey: number): [string[], string[], string[], string[]] | null {
-        let eventName = this.events.findEventByKey(eventKey);
-        if(eventName === null) return null;
+    public getUsersLoggedIn(eventName: string): [string[], string[], string[], string[]] | null {
         let admins = this.events.adminList(eventName);
         let supervisors = this.events.supervisorList(eventName);
         let freeRunners = this.events.freeRunnerList(eventName);
@@ -349,10 +338,8 @@ export class ActionHandler {
         return([adminNames, supervisorNames, freeRunnerNames, taskedRunnerNames]);
     }
     
-    public getCurrentTasks(eventKey: number) : {assigned: runner | null,task: task}[] | null {
-        let targetEventName = this.events.findEventByKey(eventKey);
-        if(targetEventName === null) return null;
-        let targetEvent = this.events.findEventByName(targetEventName);
+    public getCurrentTasks(eventName: string) : {assigned: runner | null,task: task}[] | null {
+        let targetEvent = this.events.findEventByName(eventName);
         if(targetEvent === null) return null
         return targetEvent.taskList();
     }
@@ -374,5 +361,13 @@ export class ActionHandler {
         else {
             return this.events.requestRunner(eventName, requesterScreenName)
         }
+    }
+
+    public cancelTask(eventName: string, runnerScreenName: string) : [task | null, runner | null, supervisor | admin] | null{
+        return this.events.deleteTask(eventName, runnerScreenName);
+    }
+
+    public taskComplete(eventName: string, runnerScreenName: string) : [task | null, runner | null, supervisor | admin] | null {
+        return this.events.taskComplete(eventName, runnerScreenName);
     }
 }

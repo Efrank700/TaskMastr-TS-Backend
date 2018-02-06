@@ -23,7 +23,7 @@ describe('EventManager Event Manipulation', () => {
         expect(newManager.getEventCount()).to.equal(0);
     })
 
-    it("Accpets first event", () => {
+    it("Accepets first event", () => {
         let res = newManager.addEvent(genEvent1);
         expect(res).to.equal(genEvent1);
         expect(newManager.getEventCount()).to.equal(1);
@@ -45,15 +45,39 @@ describe('EventManager Event Manipulation', () => {
         expect(newManager.getEventList().length).to.equal(2);
     })
 
+    it('Can find event by name', () => {
+        let res = newManager.findEventByName("ev1");
+        expect(res).to.equal(genEvent1);
+    })
+
+    it('Will return null when finding absent event by name', () => {
+        let res = newManager.findEventByName("missing");
+        expect(res).to.be.null;
+    })
+
+    it('Can find event by keys', () => {
+        let adminRes = newManager.findEventByKey(10000);
+        let superRes = newManager.findEventByKey(10001);
+        let runnerRes = newManager.findEventByKey(10002);
+        expect(adminRes).to.equal(genEvent1.$eventName);
+        expect(superRes).to.equal(genEvent1.$eventName);
+        expect(runnerRes).to.equal(genEvent1.$eventName);
+    })
+
+    it('Will return null when finding absent event by key', () => {
+        let res = newManager.findEventByKey(-1);
+        expect(res).to.be.null;
+    })
+
     it('Properly removes event', () => {
-        let res = newManager.removeEvent(genEvent1);
+        let res = newManager.removeEvent(genEvent1.$eventName);
         expect(res).to.equal(genEvent1);
         expect(newManager.getEventCount()).to.equal(1);
         expect(newManager.getEventList()[0]).to.equal(genEvent2);
     })
 
     it('Ignores removal of non-present events', () => {
-        let res = newManager.removeEvent(genEvent1);
+        let res = newManager.removeEvent(genEvent1.$eventName);
         expect(res).to.be.null;
         expect(newManager.getEventCount()).to.equal(1);
         expect(newManager.getEventList()[0]).to.equal(genEvent2);
@@ -65,12 +89,19 @@ describe("EventManager User Manipulations", () => {
     newManager.addEvent(genEvent1);
     newManager.addEvent(genEvent2);
     
+    it("Can successfully identify when an event is empty",() => {
+        expect(EventManager.isEmpty(genEvent1)).to.be.true
+    })
     it("Properly inserts admins when all events are empty", () => {
         let res = newManager.addAdmin(genAdmin1);
         expect(res).to.equal(genAdmin1);
         expect(genEvent1.adminList().length).to.equal(1);
         expect(genEvent1.adminList()[0]).to.equal(genAdmin1);
         expect(genEvent2.adminList().length).to.equal(0);
+    })
+
+    it("can successfully identify if an event is not empty", () => {
+        expect(EventManager.isEmpty(genEvent1)).to.be.false;
     })
 
     it("Properly inserts admin when an event has members", () => {
@@ -250,6 +281,74 @@ describe("EventManager Materials and Tasks", () => {
             expect(genEvent2.taskList()[0].assigned).to.be.null;
             expect(genEvent2.taskList()[0].task).to.equal(task);
             expect(runner).to.be.null;
+        }
+    })
+
+    it("Properly completes a task", () => {
+        let genAdmin4: admin = {screenName: "admin2", roomName: "ev4", socketId: 4, tasks: [], location: null};
+        let event = new TaskMastrEvent("ev4", 1010101, 2020202, 3030303, genAdmin4.screenName, [{itemName: "pencil", count: 10}]);
+        let runner = {screenName: "runner1", roomName: "ev1", socketId: 3, task: null}
+        event.addAdmin(genAdmin4);
+        event.addRunner(runner);
+        newManager.addEvent(event);
+        let request = newManager.requestMaterial("ev4", "admin2", "pencil", 3);
+        if(request === null) expect(0).to.equal(1);
+        else {
+            expect(request[0]).to.be.true;
+            if(request[2] === null) {
+                expect(0).to.equal(2);
+                return;
+            }
+            else {
+                if(request[2] === null) return;
+                let runner = request[2] as runner;
+                let complete = newManager.taskComplete("ev4", "runner1");
+                expect(complete).to.not.be.null;
+                if(complete === null) return;
+                else {
+                    let task = complete[0];
+                    let target = complete[1];
+                    let req = complete[2];
+                    expect(target).to.equal(runner);
+                    expect(req).to.equal(genAdmin4);
+                    expect(event.getMaterialCount("pencil")).to.equal(7);
+                    expect(event.freeRunnerList().length).to.equal(1);
+                }
+            }
+        }
+    }) 
+    
+    it("properly deletes a task", () => {
+        let genAdmin4: admin = {screenName: "admin2", roomName: "ev5", socketId: 4, tasks: [], location: null};
+        let event = new TaskMastrEvent("ev5", 1010101, 2020202, 3030303, genAdmin4.screenName, [{itemName: "pencil", count: 10}]);
+        let runner = {screenName: "runner1", roomName: "ev5", socketId: 3, task: null}
+        event.addAdmin(genAdmin4);
+        event.addRunner(runner);
+        newManager.addEvent(event);
+        let request = newManager.requestMaterial("ev5", "admin2", "pencil", 3);
+        if(request === null) expect(0).to.equal(1);
+        else {
+            expect(request[0]).to.be.true;
+            if(request[2] === null) {
+                expect(0).to.equal(2);
+                return;
+            }
+            else {
+                if(request[2] === null) return;
+                let runner = request[2] as runner;
+                let complete = newManager.deleteTask("ev5", "runner1");
+                expect(complete).to.not.be.null;
+                if(complete === null) return;
+                else {
+                    let task = complete[0];
+                    let target = complete[1];
+                    let req = complete[2];
+                    expect(target).to.equal(runner);
+                    expect(req).to.equal(genAdmin4);
+                    expect(event.getMaterialCount("pencil")).to.equal(10);
+                    expect(event.freeRunnerList().length).to.equal(1);
+                }
+            }
         }
     })
 })
