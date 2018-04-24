@@ -7,15 +7,27 @@ export class ActionHandler {
     
     private events: EventManager;
     private manager: MongoDriver;
+   
     constructor() {
         this.events = new EventManager();
         this.manager = new MongoDriver();
     }
 
-    public async addEvent(eventName: string, ownerUser: string, ownerPass: string, ownerScreen: string, ownerSocket: number, ownerLocation: string):
+    public async eventNameAvailable(eventName: string): Promise<boolean> {
+        try {
+            return MongoDriver.eventNameAvailable(eventName);
+        } catch (error) {
+            let castError = error as Error
+            throw new Error(castError.message);
+        }
+    }
+
+    public async addEvent(eventName: string, ownerUser: string, ownerPass: string, 
+                            ownerScreen: string, ownerSocket: number, ownerLocation: string):
     Promise<[boolean, TaskMastrEvent | null] | null> {
         try {
-            let tempAdmin:admin =  {screenName: ownerScreen, socketId: ownerSocket, location: ownerLocation, roomName: "irrelevant", tasks: []}
+            let tempAdmin:admin =  {screenName: ownerScreen, socketId: ownerSocket, 
+                                    location: ownerLocation, roomName: "irrelevant", tasks: []}
             let available = await MongoDriver.eventNameAvailable(eventName);
             if(!available) return[false, null];
             let eventCreated = await MongoDriver.createEvent(eventName, tempAdmin, ownerUser, ownerPass);
@@ -117,7 +129,8 @@ export class ActionHandler {
         }
     }
 
-    public async authenticates(user: string, pass: string, eventKey: number): Promise<[boolean, string, participantTypes]> {
+    public async authenticates(user: string, pass: string, eventKey: number):
+                             Promise<[boolean, string, participantTypes]> {
         try {
             return MongoDriver.authenticate(eventKey, user, pass);
         } catch (error) {
@@ -130,7 +143,8 @@ export class ActionHandler {
                              targetScreen: string, eventKey: number): 
                              Promise<[boolean, admin| null, runner| null] | null> {
         try {
-            let authenticatePromise = MongoDriver.authenticateOwner(eventKey, authorizingUser, authorizingPass);
+            let authenticatePromise = MongoDriver.authenticateOwner(eventKey, 
+                                                                    authorizingUser, authorizingPass);
             let eventName = this.events.findEventByKey(eventKey);
             let authenticated = await authenticatePromise;
             if(!authenticated[0]) {
@@ -280,12 +294,14 @@ export class ActionHandler {
                     let targetLocation: string;
                     if(location === undefined) targetLocation = "UNKNOWN";
                     else targetLocation = location;
-                    let supervisorToAdd: supervisor = {screenName: login[1],roomName:eventName, location: targetLocation, tasks: [], socketId: socketId};
+                    let supervisorToAdd: supervisor = {screenName: login[1],roomName:eventName, 
+                                                location: targetLocation, tasks: [], socketId: socketId};
                     let supervisorAdded = this.events.addSupervisor(supervisorToAdd);
                     return([supervisorToAdd !== null, login[1], eventName]);
                 }
                 else {
-                    let runnerToAdd: runner = {screenName: login[1],roomName:eventName, task: null, socketId: socketId};
+                    let runnerToAdd: runner = {screenName: login[1],roomName:eventName, 
+                                                task: null, socketId: socketId};
                     let runnerAdded = this.events.addRunner(runnerToAdd);
                     return([runnerToAdd !== null, login[1], eventName]);
                 }
