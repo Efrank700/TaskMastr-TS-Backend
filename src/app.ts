@@ -9,9 +9,11 @@ import * as bcrypt from "bcryptjs";
 import {ActionHandler} from "./ActionHandler";
 import * as BodyParser from "body-parser";
 import * as exphbs from "express-handlebars";
+import * as jwt from "jsonwebtoken";
+import {SocketIdStore} from "./ConnectionStore"
 
 let app = express();
-
+let socketStore = new SocketIdStore();
 app.use(helmet());
 app.use(BodyParser.urlencoded({extended: true}));
 app.use(BodyParser.json());
@@ -55,6 +57,8 @@ app.get('/home', (req, res) => {
 io.on('connection', (socket) => {
     console.log("socket.rooms");
 })
+
+
 
 server.listen(3000, () => console.log('Example app listening on port 3000!'))
 
